@@ -1,0 +1,444 @@
+{% extends 'base/base.html' %} 
+
+{% block page_content %}
+<script type="text/x-template" id="field-farm-table-template">
+</script>
+  <!-- TODO: combine MODAL -->
+  <div class="nav-tabs-custom" id="app">
+    <ul class="nav nav-tabs">
+	  <li class="active" id="tab_user">
+        <a href="#userprofile" data-toggle="tab" class="">基本資料</a>
+      </li>
+    </ul>
+    <div class="tab-content">
+	<!-- USER -->
+      <div class="tab-pane active" id="userprofile">
+              <!-- /box-header -->
+        {% if (is_superuser == 2) %}
+            <!-- REGION -->
+            <div class="row">
+            <div class="col-md-12">
+                <div class="box">
+                <!-- box-header -->
+                <div class="box-header with-border">
+                    <h3 class="box-title">區域授權商基本資訊</h3>
+                </div>
+                <!-- /box-header -->
+
+                <!-- body table -->
+                <div class="box-body" style="overflow-x: auto;">
+                    <table class="table table-bordered table-hover dataTable">
+                    <thead>
+                        <tr>
+                            <th>區域授權商</th>
+                            <th>省市</th>
+                            <th>區域授權商名稱</th>
+                            <th>區域授權商地址</th>
+                            <th>區域授權商電話</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ '{{' }}regions.proc_lice_id{{ '}}' }}</td>
+                            <td>{{ '{{' }}regions.province_id{{ '}}' }}</td>
+                            <td>{{ '{{' }}regions.proc_lice_neme{{ '}}' }}</td>
+                            <td>{{ '{{' }}regions.proc_lice_addr{{ '}}' }}</td>
+                            <td>{{ '{{' }}regions.tel_no{{ '}}' }}</td>
+                        </tr>
+                    </tbody>
+                    </table>
+                </div>
+                <!-- /body table -->
+                </div>
+                <!-- /box -->
+            </div>
+            </div>
+            <!-- /REGION -->                        
+        {% endif %}
+        {% if (is_superuser == 3) %}
+            <!-- LOCAL -->
+            <div class="row">
+            <div class="col-md-12">
+                <div class="box">
+                <!-- box-header -->
+                <div class="box-header with-border">
+                    <h3 class="box-title">地方代理商基本資訊</h3>
+                </div>
+                <!-- /box-header -->
+
+                <!-- body table -->
+                <div class="box-body" style="overflow-x: auto;">
+                    <table class="table table-bordered table-hover dataTable">
+                    <thead>
+                        <tr>
+                            <th>地方代理商</th>
+                            <th>區域</th>
+                            <th>省市</th>
+                            <th>地方代理商名稱</th>
+                            <th>地方代理商地址</th>
+                            <th>地方代理商電話</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ '{{' }}locals.local_agent_id{{ '}}' }}</td>
+                            <td>{{ '{{' }}locals.local_id{{ '}}' }}</td>
+                            <td>{{ '{{' }}locals.province_id{{ '}}' }}</td>
+                            <td>{{ '{{' }}locals.local_agent_name{{ '}}' }}</td>
+                            <td>{{ '{{' }}locals.local_agent_addr{{ '}}' }}</td>
+                            <td>{{ '{{' }}locals.tel_no{{ '}}' }}</td>
+                        </tr>
+                    </tbody>
+                    </table>
+                </div>
+                <!-- /body table -->
+                </div>
+                <!-- /box -->
+            </div>
+            </div>
+            <!-- /LOCAL -->
+        {% endif %}
+        {% if (is_superuser == 4) %}
+            <!-- FARM -->
+            <div class="row">
+              <div class="col-md-12">
+                  <div class="box">
+                  <!-- box-header -->
+                  <div class="box-header with-border">
+                      <h3 class="box-title">農場基本資訊</h3>
+                  </div>
+                  <!-- /box-header -->
+
+                  <!-- body table -->
+                  <div class="box-body" style="overflow-x: auto;">
+                      <table class="table table-bordered table-hover dataTable">
+                      <thead>
+                          <tr>
+                              <th>系統編號</th>
+                              <th>TGAP編號</th>
+                              <th>農場/單位名稱</th>
+                              <th>經營農戶姓名</th>
+                              <th>農場地址</th>
+                              <th>農場面積</th>
+                              <th>可耕種面積</th>
+                              <th>面積單位</th>
+                              <th>聯絡電話</th>
+                              <th>Email</th>
+                              <th>Line</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-cloak>
+                            <td> <a href="#" @click="change_farm_info()">{{ '{{' }}farms.farm_id{{ '}}' }}</a></td>
+                            <td>{{ '{{' }}farms.tgap_no{{ '}}' }}</td>
+                            <td>{{ '{{' }}farms.farm_name{{ '}}' }}</td>
+                            <td>{{ '{{' }}farms.farm_user{{ '}}' }}</td>
+                            <td>{{ '{{' }}farms.farm_addr{{ '}}' }}</td>
+                            <td>{{ '{{' }}farms.farm_area{{ '}}' }}</td>
+                            <td>{{ '{{' }}farms.arable_area{{ '}}' }}</td>
+                            <td>{{ '{{' }}farms.unit_name{{ '}}' }}</td>
+                            <td>{{ '{{' }}farms.tel_no{{ '}}' }}</td>
+                            <td>{{ '{{' }}farms.email{{ '}}' }}</td>
+                            <td>{{ '{{' }}farms.wechat_id{{ '}}' }}</td>
+                        </tr>
+                      </tbody>
+                      </table>
+                  </div>
+                  <!-- /body table -->
+                  </div>
+                  <!-- /box -->
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xs-12">
+                  <div>
+                    <h4>農場介紹</h4>
+                  <div>
+                  <div>
+                    <form method="post" action="/api/farmintro" enctype="multipart/form-data">
+                      <input type="hidden" class="form-control" id="farm_id" name="farm_id" v-model="farms.farm_id">
+                      <textarea id="farm_intro_container" name="farm_intro" maxlength="65535"></textarea>
+                    </form>
+                  </div>
+              </div>
+            </div>
+            <!-- Modal -->
+            <div id="farm_info_modal" class="modal fade" role="dialog" style="overflow-y:auto;">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" data-target="#farm_info_modal">&times;</button>
+                    <h4 class="modal-title">農場基本資訊管理</h4>
+                  </div>
+                  <!-- form -->
+                  <form class="form-horizontal">
+                    <div class="modal-body">
+                      <!-- farm-info-id -->
+                      <input type="hidden" class="form-control" id="farm-info-id" v-model="temp_farm_info.id" disabled>
+                      <!-- farm-addr -->
+                      <div class="form-group">
+                        <label for="farm-addr" class="col-sm-2 control-label required_s">農場地址</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="farm-addr" placeholder="農場地址" v-model="temp_farm_info.farm_addr" required>
+                        </div>
+                      </div>
+                      <!-- farm-area -->
+                      <div class="form-group">
+                        <label for="farm-area" class="col-sm-2 control-label required_s">農場面積</label>
+                        <div class="col-sm-10">
+                            <input type="number" class="form-control" id="farm-area" placeholder="農場面積" step="0.01" v-model="temp_farm_info.farm_area" required>
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label for="arable-area" class="col-sm-2 control-label required_s">可耕種面積</label>
+                        <div class="col-sm-10">
+                            <input type="number" class="form-control" id="arable-area" placeholder="可耕種面積" step="0.01" v-model="temp_farm_info.arable_area" required>
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label for="arable-area" class="col-sm-2 control-label required_s">面積單位</label>
+                        <div class="col-sm-10">
+                            <select class="form-control unit_selecter" v-model="temp_farm_info.area_unit" onchange="unit_selected(this);">
+                              <option value="undefined" disabled selected hidden>請選擇面積單位</option>
+                              <option v-for="unit in unit_list" v-if="unit.type_id == 1" :value="unit.unit_id">{{ '{{' }}unit.name{{ '}}' }}</option>
+                            </select>
+                        </div>
+                      </div>
+                      <!-- tgap_no -->
+                      <div class="form-group">
+                        <label for="tgap_no" class="col-sm-2 control-label">生產履歷編號</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="tgap_no" placeholder="此指農委會所推動之生產履歷編號" v-model="temp_farm_info.tgap_no" required>
+                        </div>
+                      </div>
+                      <!-- farm-name -->
+                      <div class="form-group">
+                        <label for="farm-name" class="col-sm-2 control-label required_s">農場/單位名稱</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="farm-name" placeholder="如:綠色農場、安心產銷班等" v-model="temp_farm_info.farm_name" required>
+                        </div>
+                      </div>
+                      <!-- farm-user -->
+                      <div class="form-group">
+                        <label for="farm-user" class="col-sm-2 control-label required_s">經營農戶姓名</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="farm-user" placeholder="經營農戶姓名" v-model="temp_farm_info.farm_user" required>
+                        </div>
+                      </div>
+                      <!-- tel.no -->
+                      <div class="form-group">
+                        <label for="tel-no" class="col-sm-2 control-label required_s">農場主聯絡電話</label>
+                        <div class="col-sm-10" id="tel_box">
+                            <input type="text" class="form-control" id="tel-no" placeholder="如:0101234567" onblur=isTel(this.value) v-model="temp_farm_info.tel_no" required>
+                        </div>
+                      </div>
+                      <!-- email -->
+                      <div class="form-group">
+                        <label for="email" class="col-sm-2 control-label">農場主Email</label>
+                        <div class="col-sm-10" id="email_box">
+                            <input type="email" class="form-control" id="email" placeholder="農場主聯絡信箱" onblur=isEmail(this.value) v-model="temp_farm_info.email">
+                        </div>
+                      </div>
+                      <!-- wechat-id -->
+                      <div class="form-group">
+                        <label for="wechat-id" class="col-sm-2 control-label">農場主Line</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="wechat-id" placeholder="農場主Line ID" v-model="temp_farm_info.wechat_id">
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- buttons -->
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-info" @click="update_farm_info">更新</button>
+                      <button type="button" class="btn btn-default" data-dismiss="modal" data-target="#farm_info_modal">關閉</button>
+                    </div>
+                  </form>
+                  <!-- /form -->
+                </div>
+
+              </div>
+            </div>
+            <!-- /Modal -->
+            <!-- /FARM -->   
+        {% endif %}
+{% endblock %}
+
+{% block page_script %}
+<script src="/static/tinymce/tinymce.min.js"></script>
+<!-- CDNJS :: Sortable (https://cdnjs.com/) -->
+<script src="//cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js"></script>
+<!-- CDNJS :: Vue.Draggable (https://cdnjs.com/) -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.15.0/vuedraggable.min.js"></script>
+<script>
+  var app = null;
+
+  $(() => {
+    var fieldFarmTable = {
+      template: '#field-farm-table-template',
+      props: {
+        value: Array,
+        remove: Function
+      },
+      name: 'field-farm-table',
+      computed: {
+        farms: {
+          get() {
+            return this.value
+          },
+          set(value) {
+            this.$emit('input', value)
+          }
+        }
+      },
+      methods: {
+        field_farm_remove(index) {
+          this.remove(index);
+        }
+      }
+    };
+
+    // set Vue data
+    app = new Vue({
+      components:{fieldFarmTable: fieldFarmTable},
+      el: '#app',
+      data: () => {
+        
+        return {
+          farms: {},
+          locals:{},
+          regions:{},
+          temp_farm_info: {
+            id: '',
+            farm_id: '',
+            region_id: '',
+            province_id: '',
+            local_id: '',
+            local_agent_id: '',
+            farm_addr: '',
+            farm_area: '',
+            arable_area: '',
+            area_unit:'',
+            farm_user: '',
+            farm_name: '',
+            tel_no: '',
+            email: '',
+            wechat_id: '',
+            create_date: '',
+            create_user: '',
+            update_date: '',
+            update_user: '',
+            user_id:'',
+            tgap_no:''
+          },
+          unit_list: {
+            "0":{
+              unit_id:'0',
+              unit_name:'錯誤',
+              type_id:'0'
+            }
+          }
+        }
+      },
+      mounted () {
+        this.get_unit_list();
+        // init data
+        this.farm_reload();
+        //init tinymce
+        tinymce.init({
+          selector: '#farm_intro_container',
+          language:'zh_TW',
+          plugins: "image code preview autoresize autosave save",
+          toolbar: "undo redonewdocument bold italic underline strikethrough alignleft aligncenter alignright fontselect fontsizeselect forecolor backcolor image save",
+          image_caption: true,
+          custom_colors: true,
+          branding: false,
+          image_class_list: [
+            {title: 'Responsive', value: 'img-responsive'}
+          ],
+          font_formats: '微軟正黑體=微軟正黑體,Microsoft JhengHei;新細明體=PMingLiU,新細明體;標楷體=標楷體,DFKai-SB,BiauKai;黑體=黑體,SimHei,Heiti TC;Andale Mono=andale mono,times;Arial=arial,helvetica,sans-serif;Arial Black=arial black,avant garde;Book Antiqua=book antiqua,palatino;Comic Sans MS=comic sans ms,sans-serif;Courier New=courier new,courier;Georgia=georgia,palatino;Helvetica=helvetica;Impact=impact,chicago;Symbol=symbol;Tahoma=tahoma,arial,helvetica,sans-serif;Terminal=terminal,monaco;Times New Roman=times new roman,times;Trebuchet MS=trebuchet ms,geneva;Verdana=verdana,geneva;Webdings=webdings;Wingdings=wingdings,zapf dingbats'
+          //save_onsavecallback: function () { alert('已保存'); }
+        });
+        
+      },
+      methods: {
+        farm_reload() {
+          axios.get('/api/userprofile')
+               .then(response => (this.farms = response.data))
+               .catch((error) => {"資料未輸入，請聯繫代理商"});
+        },
+        change_farm_info(){
+          this.temp_farm_info = JSON.parse(JSON.stringify(this.farms));
+          $('#farm_info_modal').modal('toggle');
+        },
+
+        get_unit_list(){
+          axios.get('/api/units')
+               .then(response => (this.unit_list = response.data))
+               .catch((error) => {alert("取得單位列表失敗")});
+        },
+
+        update_farm_info(){
+          axios.put('/api/farmer_change_info', this.temp_farm_info)
+               .then((data, status, request) => {
+                      this.farm_reload();
+                      $('#farm_info_modal').modal('toggle');
+               })
+               .catch((error) => {alert("更新失敗"); });
+        }
+      }
+    });
+
+  });
+
+$(document).on('click','th',function(){
+    var table = $(this).parents('table').eq(0);
+    var rows = table.find('tr:gt(0)').toArray().sort(comparer($(this).index()));
+    this.asc = !this.asc;
+    if (!this.asc){rows = rows.reverse();}
+    table.children('tbody').empty().html(rows);
+  });
+  function comparer(index) {
+      return function(a, b) {
+          var valA = getCellValue(a, index), valB = getCellValue(b, index);
+          return $.isNumeric(valA) && $.isNumeric(valB) ?
+              valA - valB : valA.localeCompare(valB);
+      };
+  }
+  function getCellValue(row, index){
+      return $(row).children('td').eq(index).text();
+  }
+  if ('{{intro}}'){
+    $("#farm_intro_container").html('{{intro| safe}}')
+  }else{
+    $("#farm_intro_container").html('<h3>農場主沒有輸入簡介<h3>')
+  }
+
+  function isEmail(str) {
+    if (str.search(/\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}/) != -1){
+      $("#email_alert_text").remove();
+      return true;
+    }
+    else{
+      $("#email_alert_text").remove();
+      $("#email_box").append('<p id="email_alert_text" style="color:red;">'+"請輸入有效信箱"+'</p>');
+    }
+  }
+  function isTel(str) {
+    if (str.search(/^\d{7,18}$/) != -1){
+      $("#tel_alert_text").remove();
+      return true;
+    }
+    else{
+      $("#tel_alert_text").remove();
+      $("#tel_box").append('<p id="tel_alert_text" style="color:red;">'+"請輸入有效電話號碼"+'</p>');
+    }
+  }
+  function unit_selected(obj){
+    $(obj).css("color","black");
+  }
+
+$(".required_s").prepend("<span style='color:red;'>*</span>");
+
+</script>
+{% endblock %}

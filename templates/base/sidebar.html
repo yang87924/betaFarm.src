@@ -1,0 +1,60 @@
+<!-- Left side column. contains the logo and sidebar -->
+<aside class="main-sidebar">
+  <!-- sidebar: style can be found in sidebar.less -->
+  <section class="sidebar">
+    <!-- sidebar menu: : style can be found in sidebar.less -->
+    <ul class="sidebar-menu" data-widget="tree">
+
+      {% if is_superuser == 0 %}
+        <li class="field_data"><a><span class="sidebartext">場域資料</span><i class="fa fa-caret-down"></i></a></li>
+          <li id="btn-dashboard" class="field_data_child"><a href="/" class="sidebar-link"><i class="fa fa-dashboard"></i><span class="sidebartext"> 即時資料</span></a></li>
+          <li id="btn-history" class="field_data_child"><a href="/history" class="sidebar-link"><i class="fa fa-book"></i><span class="sidebartext"> 一天內資料查詢</span></a></li>
+          <li id="btn-compare" class="field_data_child"><a href="/compare" class="sidebar-link"><i class="fa fa-signal"></i><span class="sidebartext"> 資料比對</span></a></li>
+          <li id="btn-control" class="field_data_child"><a href="/control" class="sidebar-link"><i class="fa fa-sliders"></i><span class="sidebartext"> 場域設備遠端控制</span></a></li>
+        {% if session['trace_sys_flag'] %}
+        <li class="crop_record"><a><span class="sidebartext">農務紀錄</span><i class="fa fa-caret-down"></i></a></li>
+          <li id="btn-gacp" class="crop_record_child"><a href="/gacp" class="sidebar-link sidebar_gacp_link"><i class="fa fa-database"></i><span class="sidebartext"> 農務工作紀錄(GACP)</span></a></li>
+          <li id="btn-gacp_search" class="crop_record_child"><a href="/gacp_search" class="sidebar-link"><i class="fa fa-search"></i><span class="sidebartext"> 農務工作紀錄(GACP)查詢</span></a></li>
+          <li id="btn-supplier" class="crop_record_child"><a href="/supplier" class="sidebar-link"><i class="fa fa-truck"></i><span class="sidebartext"> 供應商一覽</span></a></li>
+          <li id="btn-visible_material" class="crop_record_child"><a href="/visible_material" class="sidebar-link"><i class="fa fa-tasks"></i><span class="sidebartext"> 管理可採購資材顯示</span></a></li>
+        {% endif %}
+      {% endif %}
+
+      {% if is_superuser == 4 %}
+        <li class="field_data"><a><span class="sidebartext">場域資料</span><i class="fa fa-caret-down"></i></a></li>
+          <li id="btn-dashboard" class="field_data_child"><a href="/" class="sidebar-link"><i class="fa fa-dashboard"></i><span class="sidebartext"> 即時資料</span></a></li>
+          <li id="btn-history" class="field_data_child"><a href="/history" class="sidebar-link"><i class="fa fa-book"></i><span class="sidebartext"> 一天內資料查詢</span></a></li>
+          <li id="btn-compare" class="field_data_child"><a href="/compare" class="sidebar-link"><i class="fa fa-signal"></i><span class="sidebartext"> 資料比對</span></a></li>
+          <li id="btn-control" class="field_data_child"><a href="/control" class="sidebar-link"><i class="fa fa-sliders"></i><span class="sidebartext"> 場域設備遠端控制</span></a></li>
+        {% if session['trace_sys_flag'] %}
+        <li class="crop_record"><a><span class="sidebartext">農務紀錄</span><i class="fa fa-caret-down"></i></a></li>
+          <li id="btn-gacp_search" class="crop_record_child"><a href="/gacp_search" class="sidebar-link"><i class="fa fa-search"></i><span class="sidebartext"> 農務工作紀錄(GACP)查詢</span></a></li>
+          <li id="btn-supplier" class="crop_record_child"><a href="/supplier" class="sidebar-link"><i class="fa fa-truck"></i><span class="sidebartext"> 供應商一覽</span></a></li>
+          <li id="btn-visible_material" class="crop_record_child"><a href="/visible_material" class="sidebar-link"><i class="fa fa-tasks"></i><span class="sidebartext"> 管理可採購資材顯示</span></a></li>
+        {% endif %}
+        <li class="system_management"><a><span class="sidebartext">系統管理</span><i class="fa fa-caret-down"></i></a></li>
+          <li id="btn-management" class="system_management_child"><a href="/management" class="sidebar-link"><i class="fa fa-cogs"></i><span class="sidebartext"> 農場系統管理</span></a></li>
+          <li id="btn-userprofile" class="system_management_child"><a href="/userprofile" class="sidebar-link"><i class="fa fa-user"></i><span class="sidebartext"> 農場資料</span></a></li>
+      {% endif %}
+      
+      {% if is_superuser == 1 %}
+        <li class="field_data"><a><span class="sidebartext">場域資料</span><i class="fa fa-caret-down"></i></a></li>
+          <li id="btn-dashboard" class="field_data_child"><a href="/" class="sidebar-link"><i class="fa fa-dashboard"></i><span class="sidebartext"> 即時資料</span></a></li>
+          <li id="btn-history" class="field_data_child"><a href="/history" class="sidebar-link"><i class="fa fa-book"></i><span class="sidebartext"> 一天內資料查詢</span></a></li>
+          <li id="btn-compare" class="field_data_child"><a href="/compare" class="sidebar-link"><i class="fa fa-signal"></i><span class="sidebartext"> 資料比對</span></a></li>
+          <li id="btn-control" class="field_data_child"><a href="/control" class="sidebar-link"><i class="fa fa-sliders"></i><span class="sidebartext"> 場域設備遠端控制</span></a></li>
+        <li class="crop_record"><a><span class="sidebartext">農務紀錄</span><i class="fa fa-caret-down"></i></a></li>
+          <li id="btn-gacp" class="crop_record_child"><a href="/gacp" class="sidebar-link sidebar_gacp_link"><i class="fa fa-database"></i><span class="sidebartext"> 農務工作紀錄(GACP)</span></a></li>
+          <li id="btn-gacp_search" class="crop_record_child"><a href="/gacp_search" class="sidebar-link"><i class="fa fa-search"></i><span class="sidebartext"> 農務工作紀錄(GACP)查詢</span></a></li>
+          <li id="btn-supplier" class="crop_record_child"><a href="/supplier" class="sidebar-link"><i class="fa fa-truck"></i><span class="sidebartext"> 供應商一覽</span></a></li>
+          <li id="btn-material" class="crop_record_child"><a href="/material" class="sidebar-link"><i class="fa fa-cubes"></i><span class="sidebartext"> 資材一覽</span></a><li>
+          <li id="btn-visible_material" class="crop_record_child"><a href="/visible_material" class="sidebar-link"><i class="fa fa-tasks"></i><span class="sidebartext"> 管理可採購資材顯示</span></a></li>
+          <li id="btn-addnewmark" class="crop_record_child"><a href="/addnewmark" class="sidebar-link"><i class="fa fa-cubes"></i><span class="sidebartext"> 新增認證標章</span></a><li>
+        <li class="system_management"><a><span class="sidebartext">系統管理</span><i class="fa fa-caret-down"></i></a></li>
+          <li id="btn-management" class="system_management_child"><a href="/management" class="sidebar-link"><i class="fa fa-cogs"></i><span class="sidebartext"> 農場系統管理</span></a></li>
+          <li id="btn-farm_info_init" class="system_management_child"><a href="/farm_info_init" class="sidebar-link"><i class="fa fa-cogs"></i><span class="sidebartext"> 農場資料輸入(admin)</span></a></li>
+          <li id="btn-management_admin" class="system_management_child"><a href="/management_admin" class="sidebar-link"><i class="fa fa-cogs"></i><span class="sidebartext"> 系统管理(admin)</span></a></li>
+      {% endif %}
+    </ul>
+  </section>
+</aside>

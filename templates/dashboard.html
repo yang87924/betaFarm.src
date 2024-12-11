@@ -1,0 +1,106 @@
+{% extends 'base/base.html' %} 
+
+{% macro tab_title(field) -%}
+  <li {% if field.is_active %}class="active"{% endif %} id="tab_{{field.name}}">
+    <a href="#{{field.name}}" data-toggle="tab">{{field.alias}}</a>
+  </li>
+{%- endmacro %}
+
+{% macro content_box(fieldname, sensor, value='0') -%}
+  <div class="col-lg-2 col-md-3 col-sm-4 col-xs-6">
+    <!-- small box -->
+    <div class="small-box {{sensor.bg_color}}">
+      <div class="inner">
+        <h3 id="{{fieldname}}_{{sensor.df_name}}" data-toggle="tooltip" title="">{{value}}</h3>
+        <p style="height: 2em">{{sensor.alias}} ({{sensor.unit}})</p>
+      </div>
+      <div class="icon">
+        <i class="fa {{sensor.icon}}"></i>
+      </div>
+      <a href="/history#{{fieldname}},{{sensor.df_name}}" class="small-box-footer"><i class="fa fa-arrow-circle-right"></i>更多資訊</a>
+    </div>
+  </div>
+{%- endmacro %}
+
+{% macro tab_content(field) -%}
+  <div class="tab-pane {% if field.is_active %} active{% endif %}" id="{{field.name}}">
+    <div class="row">
+      {% for sensor in field.sensors %}
+        {{ content_box(field.name, sensor)}}
+      {% endfor %}
+      {% if field.iframe %}
+        <div class="col-xs-12">
+          <iframe src="{{field.iframe}}" width="100%" height="1500px" frameBorder="0"></iframe>
+        </div>
+      {% endif %}
+      {% if field.ipcam %}
+        <div class="col-xs-12">
+          <img width="100%" src="{{field.ipcam}}">
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  <div class = "testtt"></div>
+{%- endmacro %}
+
+{# ------------------------------------------------------------------------- #}
+                                                                                                                                                          
+{% block page_title %}即時資料{% endblock %}
+
+{% block page_content %}
+  <div class="nav-tabs-custom">
+    <ul class="nav nav-tabs">
+      {% for field in fields %}
+        {{ tab_title(field)}}
+      {% endfor %}
+    </ul>
+    <div class="tab-content">
+      {% for field in fields %}
+        {{ tab_content(field) }}
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}
+
+{% block page_script %}
+  <!-- Page script -->
+  <script>
+    $(() => {
+      // auto change to tab if given from url hash
+      let hash = window.location.hash.replace('#', '');
+      if($('#tab_' + hash).length){
+        $('#tab_' + hash).find('a').click();
+      }
+
+      // update monitor date
+      function update() {
+        if (!$('.active').length) {
+          setTimeout(update, 5000);
+          return;
+        }
+        let field = $('.active').attr('id').replace('tab_', '');
+        let ajax_obj = $.ajax({
+          url: '/datas/' + field +'?limit=1',
+          type:'GET'
+        }).done((data) => {
+          let expire_date = new Date();
+          expire_date.setHours(expire_date.getHours() - 2);
+          for(key in data) {
+            if(data[key][0]) {
+              if(new Date(data[key][0][0].replace(/-/g, '/')) < expire_date) {
+                $('#' + field + '_' + key).html('<h3 style="color:red;">' + data[key][0][1] + '</h3>');
+                $('#' + field + '_' + key).attr('data-original-title', 'The last data was taken at ' + data[key][0][0] + '.');
+              } else {
+                $('#' + field + '_' + key).html(data[key][0][1]);
+                $('#' + field + '_' + key).attr('data-original-title', '');
+              }
+            }
+          }
+        }).always(() => {
+          setTimeout(update, 5000);
+        });
+      }
+      update();
+    })
+  </script>
+{% endblock %}

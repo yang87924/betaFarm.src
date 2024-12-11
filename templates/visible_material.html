@@ -1,0 +1,236 @@
+{% extends 'base/base.html' %} 
+
+{% block page_title %}管理可採購資材顯示(農場內各場域共用){% endblock %}
+
+{% block page_content %}
+<div class="row visible_material_content">
+    <div class="col-xs-12 visible_material_col">
+        <div class="toolbar">
+            <h4>勾選要顯示的資材後點選確定按鈕，才能在農務紀錄(GACP)採購紀錄中顯示</h4>
+            <h4>請注意換頁將會遺失未保存的數據</h4>
+        </div>
+        <table 
+            id="visible_material_table" 
+            data-toggle="table" 
+            data-search="true"
+            data-sort-name="state" 
+            data-sort-order="desc" 
+            data-maintain-meta-data="true"
+            data-pagination="true"
+            data-page-size="25"
+            data-side-pagination="server" 
+            data-checkbox-header="false"
+            data-url="/api/visiblematerial">
+        <thead>
+            <tr>
+            <th data-field="state" data-checkbox="true"></th>
+            <th data-field="item_no" data-formatter="view_detail" data-events="openModal">詳細</th>
+            <th data-field="item_name">資材廠牌/資材名稱</th>
+            <th data-field="type">種類</th>
+            <th data-field="label">廠商(製造商/代理商)</th>
+            </tr>
+        </thead>
+        </table>
+    </div>
+    <div class="col-xs-6 visible_material_change_btn_box">
+        <button class="btn btn-danger visible_default_btn">全部取消勾選</button>
+        <button class="btn btn-success visible_material_change_btn">確定修改</button>
+    </div>
+    <div class="col-xs-6"></div>
+
+    <!-- Modal -->
+    <div id="item_detail_modal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" data-target="#item_detail_modal">&times;</button>
+                <h4 class="modal-title">資材詳細資料</h4>
+            </div>
+            <div class="modal-body">
+                <table 
+                    id="material_detail_table" 
+                    data-toggle="table">
+                <thead>
+                    <tr>
+                    <th data-field="column" data-width="40" data-width-unit="%">欄位</th>
+                    <th data-field="data">資料</th>
+                    </tr>
+                </thead>
+                </table>
+            </div>
+            <!-- buttons -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" data-target="#item_detail_modal">關閉</button>
+            </div>
+        </div>
+        </div>
+    </div>
+    <!-- /Modal -->    
+</div>
+{% endblock %}
+
+{% block page_script %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.15.4/bootstrap-table.js"></script>
+<script>
+
+    $(window).scroll(function() {
+        var btn_change = false
+        var btn_changed = false
+        let bottom_range = $(document).height() - $(window).height() - $(window).scrollTop();
+        let footer_height = $(".main-footer").height()
+        let top = $(this).scrollTop()
+        if (top>400){
+            btn_change = true
+        }
+        if ((bottom_range > footer_height) ){
+            $('.visible_material_change_btn').stop().animate({bottom:"5px"},0)
+        }else if((bottom_range <= (footer_height))){
+            $('.visible_material_change_btn').animate({bottom:$(".main-footer").outerHeight()+5+"px"},0)
+        }
+        if (btn_change&&!btn_changed){
+            $('.visible_material_change_btn').show()
+            btn_changed = true
+            btn_change = false
+        }
+    })
+
+    $(".visible_material_change_btn").click(function() {
+        data = JSON.stringify($("#visible_material_table").bootstrapTable('getData'))
+        $.ajax(
+            {
+                type: "POST",
+                url: '/api/visiblematerial',
+                data: data,
+                success:function(data){
+                    Swal.fire({
+                        icon: 'success',
+                        title: "修改成功",
+                    }).then((result3) => {
+                        $("#visible_material_table").bootstrapTable("refresh")
+                    })
+                },
+                error:function(error){
+                    Swal.fire({
+                        icon: 'error',
+                        title: "修改失敗",
+                    })
+                }
+            }
+        )
+    })
+    
+    function view_detail(value){
+        return '<button class="item_detail_link" value='+value+'>詳細</button>'
+    }
+
+    window.openModal = {
+        'click .item_detail_link' : function(e, value, row, index){
+            var datas = [{"column":"","data":""}]
+            $.ajax({
+                    url : "/api/visible_material_detail?id="+value
+            }).done(function(data){
+                datas = data
+                for (key in datas){
+                    datas[key]["column"] = replace_col_name(datas[key]["column"])//change english to chinese
+                } 
+                $("#material_detail_table").bootstrapTable('destroy').bootstrapTable({
+                    data:datas
+                })
+                $('#item_detail_modal').modal('toggle');
+            }).fail(function(){
+                return;
+            })
+        }
+    }
+
+    function replace_col_name(col_name){
+        switch(col_name){
+            case "sup_type":
+                return "類型"
+            break;
+            case "organic_material_no":
+                return "商品化資材審查編號"
+            break;
+            case "cultivar_id":
+                return "種別"
+            break;
+            case "pest_reg_no":
+                return "農藥許可證號碼/免登產品登錄字號"
+            break;
+            case "fert_type":
+                return "肥料品目"
+            break;
+            case "reg_file_no":
+                return "商品登記證明文件字號"
+            break;
+            case "item_name":
+                return "廠牌/資材名稱"
+            break;
+            case "ingredients":
+                return "登記成分"
+            break;
+            case "row_material":
+                return "標示原料"
+            break;
+            case "memo":
+                return "備註"
+            break;
+            case "sup_name":
+                return "廠商(製造商/代理商)"
+            break;
+            case "busi_id":
+                return "統編"
+            break;
+            case "user_name":
+                return "聯絡人"
+            break;
+            case "tel_no":
+                return "電話"
+            break;
+            case "sup_addr":
+                return "廠商地址"
+            break;
+            case "email":
+                return "e-mail"
+            break;
+            case "sup_memo":
+                return "廠商備註"
+            break;
+        }
+    }
+
+    $(".visible_default_btn").on('click',function(){
+        Swal.fire({
+            title:'確定要將所有已勾選資材取消勾選?',
+            text:'包含使用者自行新增的非有機資材，但只會取消勾選而不會刪除',
+            icon:'warning',
+            showCancelButton: true,
+            confirmButtonText:'確定',
+            cancelButtonText:'取消'
+        }).then((result) => {
+            if (result.value){
+                $.ajax({
+                    type: "PUT",
+                    url: '/api/visiblematerial',
+                    success:function(data){
+                        Swal.fire({
+                            icon: 'success',
+                            title: "修改成功",
+                        }).then((result) => {
+                            $("#visible_material_table").bootstrapTable("refresh")
+                        })
+                    },
+                    error:function(error){
+                        console.log(error.responseText)
+                        Swal.fire({
+                            icon: 'error',
+                            title: "修改失敗",
+                        })
+                    }
+                })
+            }
+        })
+    })
+</script>
+{% endblock %}
+

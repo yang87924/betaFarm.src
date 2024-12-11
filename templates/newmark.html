@@ -1,0 +1,28 @@
+{% extends 'base/base.html' %} 
+
+{% block page_title %}新增認證標章{% endblock %}
+
+{% block page_content %}
+<div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8">
+        <form method = "post" action="/api/HARVEST_RECORD" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="mark_name" class="control-label">名稱</label>
+                <input type="text" class="form-control" id="mark_name" name="mark_name" required>
+            </div>
+            <div class="form-group">
+                <label for="mark_image" class="control-label">標籤</label>
+                <input type="file" class="form-control" id="mark_image" name="mark_image" accept=".jpg,.jpeg" required>
+            </div>
+            <input type = "submit" class="btn btn-success" value="送出">
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block page_script %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.15.4/bootstrap-table.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.9/dist/js/bootstrap-select.min.js"></script>
+{% endblock %}

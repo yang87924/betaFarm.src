@@ -1,0 +1,1549 @@
+{% extends 'base/base.html' %} 
+
+{% block page_title %}農務工作紀錄(GACP){% endblock %}
+{% block page_content %}
+<div class="col-xs-12">
+	<a href="/gacp?is_organic=true"><button class="btn btn-success col-xs-11 col-md-4 btn-organic">切換為有機模式</button></a>
+	<a href="/gacp?is_organic=false"><button class="btn btn-warning col-xs-11 col-md-4 btn-organic">切換為非有機模式</button></a>
+	<h4 class="col-xs-11 col-md-3 organic_mode_text">現在為<b id='organic_mode_text'></b>模式</h4>
+</div>
+<link rel="stylesheet" href="/static/css/form.css">
+<script type="text/x-template" id="field-sensor-table-template">
+<script>
+</script>
+<table class="table table-bordered table-hover dataTable">
+</table>
+</script>
+  <!-- TODO: combine MODAL -->
+  <div class="nav-tabs-custom" id="app">
+  	<h3 class="warning_title">請詳細閱讀注意事項</h3>
+    <ul class="nav nav-tabs">
+	  {% if session['is_organic'] == "true" %}
+      <li class="gacp_nav_tag" id="tab_AFFIDAVIT">
+        <a href="#AFFIDAVIT" data-toggle="tab" id="to_AFFIDAVIT" class="affidavit gacp_nav_tag_link">有機模式須知</a>
+      </li>
+	  {% endif %}
+      <li class="gacp_nav_tag" id="tab_ADD_SUP">
+        <a href="#ADD_SUP" data-toggle="tab" id="to_ADD_SUP" class="gacp_nav_tag_link">新增種苗供應商</a>
+      </li>
+      <li class="gacp_nav_tag" id="tab_SEED_REGIS_FORM">
+        <a href="#SEED_REGIS_FORM" data-toggle="tab" id="to_SEED_REGIS_FORM" class="gacp_nav_tag_link">種苗登記表</a>
+      </li>
+      <li class="gacp_nav_tag" id="tab_CULT_WORK_RECORD">
+        <a href="#CULT_WORK_RECORD" data-toggle="tab" id="to_CULT_WORK_RECORD" class="gacp_nav_tag_link">栽培工作記錄</a>
+      </li>
+      <li class="gacp_nav_tag" id="tab_FERT_CONS_RECORD">
+        <a href="#FERT_CONS_RECORD" data-toggle="tab" id="to_FERT_CONS_RECORD" class="gacp_nav_tag_link">肥料施用記錄</a>
+      </li>
+      <li class="gacp_nav_tag" id="tab_PESTS_DISEASES_RECORD">
+        <a href="#PESTS_DISEASES_RECORD" data-toggle="tab" id="to_PESTS_DISEASES_RECORD" class="gacp_nav_tag_link">防治資材施用記錄</a>
+      </li>
+      <li class="gacp_nav_tag" id="tab_HARVEST_RECORD">
+        <a href="#HARVEST_RECORD" data-toggle="tab" id="to_HARVEST_RECORD" class="gacp_nav_tag_link">採收/採收後處理記錄</a>
+      </li>
+      <li class="gacp_nav_tag" id="tab_SHIPPMENT_RECORD">
+        <a href="#SHIPPMENT_RECORD" data-toggle="tab" id="to_SHIPPMENT_RECORD" class="gacp_nav_tag_link">出貨記錄</a>
+      </li>
+      <li class="gacp_nav_tag" id="tab_SALES_INFO">
+        <a href="#SALES_INFO" data-toggle="tab" id="to_SALES_INFO" class="gacp_nav_tag_link">銷售對象聯絡資料</a>
+      </li>
+	  {% if session['is_organic'] == "false" %}
+      <li class="gacp_nav_tag" id="tab_ADDMATERIAL">
+        <a href="#ADDMATERIAL" data-toggle="tab" id="to_ADDMATERIAL" class="gacp_nav_tag_link">新增非有機認證資材</a>
+      </li>
+	  {% endif %}
+      <li class="gacp_nav_tag" id="tab_FERT_PURCH_RECORD">
+        <a href="#FERT_PURCH_RECORD" data-toggle="tab" id="to_FERT_PURCH_RECORD" class="gacp_nav_tag_link">肥料資材採購記錄表</a>
+      </li>
+      <li class="gacp_nav_tag" id="tab_PREVE_PURCH_RECORD">
+        <a href="#PREVE_PURCH_RECORD" data-toggle="tab" id="to_PREVE_PURCH_RECORD" class="gacp_nav_tag_link">防治資材採購記錄表</a>
+      </li>
+      <li class="gacp_nav_tag" id="tab_OTHER_PURCH_RECORD">
+        <a href="#OTHER_PURCH_RECORD" data-toggle="tab" id="to_OTHER_PURCH_RECORD" class="gacp_nav_tag_link">其他資材採購記錄表</a>
+      </li>
+      <li class="gacp_nav_tag" id="tab_OTHER_INSPECTION_INFO">
+        <a href="#OTHER_INSPECTION_INFO" data-toggle="tab" id="to_OTHER_INSPECTION_INFO" class="gacp_nav_tag_link">各種檢驗分析表照片</a>
+      </li>
+      <li class="gacp_nav_tag" id="tab_CERTIFICATE_MRAK">
+        <a href="#CERTIFICATE_MRAK" data-toggle="tab" id="to_CERTIFICATE_MRAK" class="gacp_nav_tag_link">各項認證標章</a>
+      </li>
+      <li class="gacp_nav_tag" id="tab_OTHER_NOTES">
+        <a href="#OTHER_NOTES" data-toggle="tab" id="to_OTHER_NOTES" class="gacp_nav_tag_link">其他記事</a>
+      </li>
+	  <li class="gacp_nav_tag" id="tab_warning_page">
+        <a href="#warning_page" data-toggle="tab" id="to_warning_page" class="gacp_nav_tag_link">注意事項</a> 
+	  </li>
+    </ul>
+    <div class="tab-content">
+		<!--注意事項-->
+		<div class="tab-pane fade" id="warning_page">
+        <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-8">
+				<div class="box">
+					<div class="box-body">
+						<div class="table_title">注意事項</div>
+						<h4>
+						本系統參考 WHO GACP 規範設計<br>
+						旨在協助農民紀錄農業生產過程中的相關農作資訊<br><br>
+
+						由於政府有制定相對應的農業規範<br>
+						對「產銷履歷」等相關文字與標章的使用有嚴格規定<br>
+						違反相關管理辦法時，政府會依法予以罰鍰處理<br>
+						請農場主與場域管理者等相關人士注意<br><br>
+						
+						<p class="gacp_warning">現階段使用本系統並「不」代表您可以合法地宣稱您的農作或農產品符合「產銷履歷」或政府製定的農業規範</p>
+						如果因為您個人的不當宣稱導致政府依法予以罰鍰處理時<br>
+						本公司不負任何責任<br><br>
+
+						謹此告之 敬請見諒<br>
+						</h4>
+					</div>
+					<div class="text-center">
+						<button class="btn btn-success readed_btn">確認</button><br><br>
+					</div>
+				</div>
+			</div>
+        </div>
+      	</div>
+      	<!-- /注意事項 -->
+
+		<!--有機誓約書-->
+		{% if session['is_organic'] == "true" %}
+		<div class="tab-pane fade" id="AFFIDAVIT">
+        <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-8">
+				<div class="box">
+					<div class="box-body">
+						<div class="table_title">有機模式須知</div>
+						<br>
+						<form method="post" onsubmit="return gacp_onsubmit(this);" action="/api/AFFIDAVIT">
+							<div class="form-group">
+								<label for="region_id15" class="control-label required_s">場域</label>
+								<select title="請選擇場域" name="region_id" id="region_id15" class="selectpicker form-control" required>
+									{% for field_id in field_id_active_affidavit %}
+										<option value="{{field_id[0]}}">{{field_id[2]}}({{field_id[1]}})</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div>
+								<h4>施行有機農法之農場場域</h4><br>
+								<h4>本系統將限制所能購買與使用的資材均在農糧署公告有機認證資材之內</h4><br>
+								<h4>若欲新增使用非公告有機認證的資材</h4><br>
+								<h4>請通知管理員切換為非有機模式</h4><br>
+							</div>
+							<br>
+							<div>
+								<label for="organic_affidavit" class="control-label required_s">我已詳細閱讀並確認</label>
+								<input class="form-check-input" type="checkbox" name="organic_affidavit" id="organic_affidavit" value="1" required>
+							</div>
+							<br>
+							<input type = "submit" class="btn btn-success" value="確認送出">
+						</form> 
+					</div>
+				</div>
+			</div>
+        </div>
+      	</div>
+		{% endif %}
+      	<!-- /有機誓約書 -->
+
+      	<!-- 種苗登記表 -->
+      <div class="tab-pane fade" id="SEED_REGIS_FORM">
+        <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-8">
+				<div class="box">
+					<div class="box-body">
+						<div class="table_title">種苗登記表</div>
+						<h4>紀錄種苗的品種、來源</h4>
+						<form method="post" onsubmit="return gacp_onsubmit(this,'seeding');" action="/api/SEED_REGIS_FORM">
+							<div class="form-group">
+								<label for="region_id1" class="control-label required_s seeding_input_label">場域</label>
+								<select title="請選擇場域" name="region_id" id="region_id1" class="selectpicker form-control" required>
+									{% for field_id in field_id_active %}
+										<option value="{{field_id[0]}}">{{field_id[2]}}({{field_id[1]}})</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="item_no1" class="control-label required_s seeding_input_label">
+									品種<a id="btn_add_seed"  data-toggle="modal" data-target="#add_seed_modal">(點此新增)</a>
+								</label>
+								<select title="請選擇種苗" id="material1" name="item_no" class="selectpicker form-control" data-live-search="true" required>
+									{% for item in cult_items %}
+										<optgroup label="{{item['name']}}">
+										{% for crop in item['crop'] %}
+											<option value="{{crop.item_no}}">{{crop.item_name}}</option>
+										{% endfor %}
+										</optgroup>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="seed_qty" class="control-label required_s seeding_input_label">數量</label>
+								<input type="number" class="form-control" id="seed_qty" name="seed_qty" min="0" step="0.1" placeholder="種苗數量" required>
+							</div>
+							<div class="form-group">
+								<label for="seed_qty_unit" class="control-label required_s seeding_input_label">單位</label>
+								<select title="請選擇單位" id="seed_qty_unit" name="seed_qty_unit" class="selectpicker form-control" required>
+									{% for unit in seed_units %}
+										<option value="{{unit.unit_id}}">{{unit.name}}</option>
+									{% endfor %}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="self_reserved" class="control-label required_s seeding_input_label">是否為自培留種</label>
+								<select title="是否為自培留種" name="self_reserved" id="self_reserved" class="selectpicker form-control" onchange="selfReserved(this);" required>
+									<option value="1">是</option>
+									<option value="0">否</option>
+								</select>
+							</div>
+							<div class="form-group seed_hide_box">
+								<label for="sup_id4" class="required_s control-label seeding_input_label">種子(苗)來源</label>
+								<select title="若無選項請先新增種苗供應商" id="sup_id4" name="sup_id" class="selectpicker form-control">
+									{% for sup in user_sup %}
+										<option value="{{sup.sup_id}}">{{sup.sup_name}}</option>
+									{% endfor %}
+								</select>
+							</div>
+							<div class="form-group seed_hide_box">
+								<label for="purch_date1" class="control-label required_s seeding_input_label">購入日期</label>
+								<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control" id="purch_date1" name="purch_date">
+							</div>
+							<input type = "submit" class="btn btn-success" value="確認送出">
+						</form> 
+					</div>
+				</div>
+			</div>
+        </div>
+      </div>
+      <!-- /种苗登记表 -->
+
+      <!-- 栽培工作紀錄 -->
+      <div class="tab-pane fade" id="CULT_WORK_RECORD">
+        <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-8">
+				<div class="box">
+					<div class="box-body">
+						<div class="table_title">栽培工作紀錄</div>
+						<h4>種植期間所有工作的紀錄<br>施肥/施藥需要同時填寫肥料施用紀錄/防治資材施用紀錄</h4>
+						<form method = "post" onsubmit="return gacp_onsubmit(this,'cult_work');" action="/api/CULT_WORK_RECORD" enctype="multipart/form-data">
+							<div class="form-group">
+								<label for="region_id2" class="control-label required_s cult_work_input_label">場域</label>
+								<select title="請選擇場域" name="region_id" id="region_id2" class="selectpicker form-control" required>
+									{% for field_id in field_id_active %}
+										<option value="{{field_id[0]}}">{{field_id[2]}}({{field_id[1]}})</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="record_index" class="control-label required_s cult_work_input_label">紀錄項目</label>
+								<select title="請選擇紀錄項目" id="record_index" class="selectpicker form-control" data-live-search="true" onchange="recordindex(this);" required>
+									<option value="1">耕地管理</option>
+									<option value="2">育苗/種植</option>
+									<option value="3">栽培管理</option>
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="record_item1" class="control-label required_s cult_work_input_label">作業內容</label>
+								<select title="請先選擇紀錄項目" name="record_item" id="record_item1" class="selectpicker form-control" data-hide-disabled="true" data-live-search="true" required>
+									<optgroup class="cult_farm_manage cult_record_item_hide" label="耕地管理">
+										{% for work in cult_work_list %}
+											{% if (work.cult_work_code > 10000) and (work.cult_work_code < 20000) %}
+												{% if work.cult_work_code % 10 == 0 %}
+													<option value="{{work.cult_work_code}}">{{work.cult_work_tw_name}}</option>
+												{% else %}
+													<option value="{{work.cult_work_code}}">└ {{work.cult_work_tw_name}}</option>
+												{% endif %}
+											{% endif %}
+										{% endfor%}
+										<option value="90010">其他</option>
+									</optgroup>
+									<optgroup class="cult_planting cult_record_item_hide" label="育苗/種植">
+										{% for work in cult_work_list %}
+											{% if (work.cult_work_code > 20000) and (work.cult_work_code < 30000) %}
+												{% if work.cult_work_code % 10 == 0 %}
+													<option value="{{work.cult_work_code}}">{{work.cult_work_tw_name}}</option>
+												{% else %}
+													<option value="{{work.cult_work_code}}">└ {{work.cult_work_tw_name}}</option>
+												{% endif %}
+											{% endif %}
+										{% endfor%}
+										<option value="90010">其他</option>
+									</optgroup>
+									<optgroup class="cult_cult_manage cult_record_item_hide" label="栽培管理">
+										{% for work in cult_work_list %}
+											{% if (work.cult_work_code > 30000) and (work.cult_work_code < 40000) %}
+												{% if work.cult_work_code % 10 == 0 %}
+													<option value="{{work.cult_work_code}}">{{work.cult_work_tw_name}}</option>
+												{% else %}
+													<option value="{{work.cult_work_code}}">└ {{work.cult_work_tw_name}}</option>
+												{% endif %}
+											{% endif %}
+										{% endfor%}
+										<option value="90010">其他</option>
+									</optgroup>
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="word_date1" class="control-label required_s cult_work_input_label">作業日期</label>
+								<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control" id="word_date1" name="word_date" required>
+							</div>
+							<div class="form-group">
+								<label for="up_file1" class="control-label cult_work_input_label">上傳檔案(僅接受jpg檔案)</label>
+								<input type="file" capture="camera" class="form-control" id="up_file1" name="up_file" onchange="preview(this,'cult_work_preview')" accept=".jpg,.jpeg" >
+							</div>
+							<img id="cult_work_preview" class="preview_img" style="max-width:400px; width:100%;" src="#"/>
+							<br><br>
+							<div class="form-group">
+								<label for="memo1" class="control-label cult_work_input_label">備註</label>
+								<textarea name="memo" id="memo1" class="form-control" placeholder="其他補充說明"></textarea>
+							</div>
+							<input type = "submit" class="btn btn-success" value="確認送出">
+						</form>
+					</div>
+				</div>
+			</div>
+        </div>
+      </div>
+      <!-- /栽培工作记录 -->
+
+      <!-- 肥料施用紀錄 -->
+      <div class="tab-pane fade" id="FERT_CONS_RECORD">
+        <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-8">
+				<div class="box">
+					<div class="box-body">
+						<div class="table_title">肥料施用紀錄</div>
+						<h4>需要同時填寫栽培工作紀錄</h4>
+						<form method = "post" onsubmit="return gacp_onsubmit(this,'fert_cons');" action="/api/FERT_CONS_RECORD">
+							<div class="form-group">
+								<label for="region_id3" class="control-label required_s fert_cons_input_label">場域</label>
+								<select title="請選擇場域" name="region_id" id="region_id3" class="selectpicker form-control" required>
+									{% for field_id in field_id_active %}
+										<option value="{{field_id[0]}}">{{field_id[2]}}({{field_id[1]}})</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="fert_code1" class="control-label required_s fert_cons_input_label">施肥別</label>
+								<select title="請選擇施肥別" name="fert_code" id="fert_code1" class="selectpicker form-control" required>
+								{% for work in fert_cons_list %}
+									<option value="{{work.fert_cons_code}}">{{work.fert_cons_name}}</option>
+								{% endfor %}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="fert_date1" class="control-label required_s fert_cons_input_label">施用日期</label>
+								<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control" id="fert_date1" name="fert_date" required>
+							</div>
+							<div class="form-group">
+								<label for="item_no2" class="control-label required_s fert_cons_input_label">施用資材</label>
+								<select title="只能選擇已採購的資材" id="item_no2" name="item_no" class="selectpicker form-control" required>
+									{% for material in fert_materials_purchased %}
+										<option value="{{material.record_id}}">{{material.item_name}}(批號:{{material.lot_number}})</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="application_qty1" class="control-label required_s fert_cons_input_label">施用量</label>
+								<input type="number" class="form-control" id="application_qty1" name="application_qty" min="0" step="0.01" placeholder="肥料重量" required>
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="qty_unit4" class="control-label required_s fert_cons_input_label">單位</label>
+								<select title="請選擇單位" id="qty_unit4" name="qty_unit" class="selectpicker form-control" required>
+									{% for unit in material_units %}
+										<option value="{{unit.unit_id}}">{{unit.name}}</option>
+									{% endfor %}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="memo2" class="control-label fert_cons_input_label">備註</label>
+								<textarea name="memo" id="memo2" class="form-control" placeholder="其他補充說明"></textarea>
+							</div>
+							<input type = "submit" class="btn btn-success" value="確認送出">
+						</form>
+					</div>
+				</div>
+			</div>
+        </div>
+      </div>
+      <!-- /肥料施工记录 -->
+
+      <!-- 防治資材施用记录 -->
+      <div class="tab-pane fade" id="PESTS_DISEASES_RECORD">
+        <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-8">
+				<div class="box">
+					<div class="box-body">
+						<div class="table_title">防治資材施用紀錄</div>
+						<h4>需要同時填寫栽培工作紀錄</h4>
+						<form method = "post" onsubmit="return gacp_onsubmit(this,'pest_diseases');" action="/api/PESTS_DISEASES_RECORD">
+							<div class="form-group">
+								<label for="region_id4" class="control-label required_s pest_diseases_input_label">場域</label>
+								<select title="請選擇場域" name="region_id" id="region_id4" class="selectpicker form-control" required>
+								{% for field_id in field_id_active %}
+									<option value="{{field_id[0]}}">{{field_id[2]}}({{field_id[1]}})</option>
+								{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="fert_date2" class="control-label required_s pest_diseases_input_label">施用日期</label>
+								<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control" id="fert_date2" name="fert_date" required>
+							</div>
+							<div class="form-group">
+								<label for="control_obj_code1" class="control-label required_s pest_diseases_input_label">
+									防治對象<a id="btn_add_control_obj"  data-toggle="modal" data-target="#add_control_obj_modal">(點此新增)</a>
+								</label>
+								<select title="選擇防治對象" name="control_obj_code" id="control_obj_code1" class="selectpicker form-control" data-live-search="true" required>
+									{% for control_obj in control_obj_list %}
+										<option value="{{control_obj.control_obj_code}}">{{control_obj.control_obj_name}}</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="item_no3" class="control-label required_s pest_diseases_input_label">施用資材</label>
+								<select title="只能選擇已採購的資材" id="item_no3" name="item_no" class="selectpicker form-control" required>
+									{% for material in prev_materials_purchased %}
+										<option value="{{material.record_id}}">{{material.item_name}}(批號:{{material.lot_number}})</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="application_qty2" class="control-label required_s pest_diseases_input_label">施用量</label>
+								<input type="number" class="form-control" id="application_qty2" placeholder="稀釋前資材重量" name="application_qty" min="0" step="0.01" required>
+							</div>
+							<div class="form-group">
+								<label for="qty_unit5" class="control-label required_s pest_diseases_input_label">單位</label>
+								<select title="請選擇單位" id="qty_unit5" name="qty_unit" class="selectpicker form-control" required>
+									{% for unit in material_units %}
+										<option value="{{unit.unit_id}}">{{unit.name}}</option>
+									{% endfor %}
+								</select>
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="dilution_ratio" class="control-label required_s pest_diseases_input_label">稀釋倍數</label>
+								<input type="number" class="form-control" placeholder="資材稀釋倍數" id="dilution_ratio" name="dilution_ratio" min="0" step="0.01"required>
+							</div>
+							<div class="form-group">
+								<label for="preve_method" class="control-label pest_diseases_input_label">防治方式</label>
+								<textarea name="preve_method" id="preve_method" class="form-control" placeholder="描述本次記錄的作業內容"></textarea>
+							</div>
+							<input type = "submit" class="btn btn-success" value="確認送出">
+						</form>
+					</div>
+				</div>
+			</div>
+        </div>
+      </div>
+      <!-- /病虫草害等防治施用记录 -->
+      
+      <!-- 採收记录 -->
+      <div class="tab-pane fade" id="HARVEST_RECORD">
+        <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-8">
+				<div class="box">
+					<div class="box-body">
+						<div class="table_title">採收/採收後處理紀錄</div>
+						<h4>場域採收後處理完請務必填寫總產出</h4>
+						<h5>填寫總產出: 於分級和貯藏方式中選擇總產出</h5>
+						<br>
+						<form method = "post" onsubmit="return gacp_onsubmit(this,'harvest');" action="/api/HARVEST_RECORD">
+							<div class="form-group">
+								<label for="region_id5" class="control-label required_s harvest_input_label">場域</label>
+								<select title="請選擇場域" name="region_id" id="region_id5" class="selectpicker form-control" required>
+									{% for field_id in field_id_active %}
+										<option value="{{field_id[0]}}">{{field_id[2]}}({{field_id[1]}})</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="word_date2" class="control-label required_s harvest_input_label">作業日期</label>
+								<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control" id="word_date2" name="word_date" required>
+							</div>
+							<div class="form-group">
+								<label for="harvest_qty" class="control-label required_s harvest_input_label">採收量</label>
+								<input type="number" class=" form-control" placeholder="此次採收量(處理前)" id="harvest_qty" name="harvest_qty" min="0" step="0.01" required>
+							</div>
+							<div class="form-group">
+								<label for="qty_unit6" class="control-label required_s harvest_input_label">單位</label>
+								<select title="請選擇單位" id="qty_unit6" name="qty_unit" class="selectpicker form-control" required>
+									{% for unit in weight_units %}
+										<option value="{{unit.unit_id}}">{{unit.name}}</option>
+									{% endfor %}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="grading_code1" class="control-label required_s harvest_input_label">分級</label>
+								<select title="請選擇分級情況" name="grading_code" id="grading_code1" class="selectpicker form-control output" required>
+								{% for granding in granding_list %}
+									<option value="{{granding.grading_code}}">{{granding.grading_code_name}}</option>
+								{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="storage_code1" class="control-label required_s harvest_input_label">貯藏方式</label>
+								<select title="請選擇貯藏方式" name="storage_code" id="storage_code1" class="selectpicker form-control output" required>
+								{% for storage in storage_list %}
+									<option value="{{storage.storage_code}}">{{storage.storage_code_name}}</option>
+								{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="word_memo2" class="control-label harvest_input_label">作業內容</label>
+								<textarea name="word_memo" id="word_memo2" class="form-control" placeholder="描述本次記錄的作業內容"></textarea>
+							</div>
+							<div class="form-group">
+								<label for="memo4" class="control-label harvest_input_label">備註</label>
+								<textarea name="memo" id="memo4" class="form-control" placeholder="其他補充說明"></textarea>
+							</div>
+							<input type = "submit" class="output_btn btn btn-success" value="確認送出">
+						</form>
+					</div>
+				</div>
+			</div>
+        </div>
+      </div>
+      <!-- /採收记录 -->
+
+      <!-- 出货记录 -->
+      <div class="tab-pane fade" id="SHIPPMENT_RECORD">
+        <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-8">
+				<div class="box">
+					<div class="box-body">
+						<div class="table_title">出貨紀錄</div>
+						<h4>紀錄出貨的貨品和銷售對象</h4>
+						<form method = "post" onsubmit="return gacp_onsubmit(this,'shippment');" action="/api/SHIPPMENT_RECORD">
+							<div class="form-group">
+								<label for="region_id7" class="control-label required_s shippment_input_label">場域</label>
+								<select title="請選擇場域" name="region_id" id="region_id7" class="selectpicker form-control" required>
+									{% for field_id in field_id_active %}
+										<option value="{{field_id[0]}}">{{field_id[2]}}({{field_id[1]}})</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="sales_date" class="control-label required_s shippment_input_label">出貨日期</label>
+								<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control" id="sales_date" name="sales_date" placeholder="" required>
+							</div>
+							<div class="form-group">
+								<label for="harvest_no1" class="control-label required_s shippment_input_label">採收日期</label>
+								<select title="請先填寫採收後處理和選擇場域" name="harvest_no" id="harvest_no1" class="harvest_no selectpicker form-control" required>
+								<!--先選field才出現-->
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="sales_sup_id1" class="control-label required_s shippment_input_label">銷售對象</label>
+								<select title="需要銷售對象聯絡資料" name="sales_sup_id" id="sales_sup_id1" class="selectpicker form-control" data-live-search="true" required>
+								{% for sup in sales_sup %}
+									<option value="{{sup.sales_sup_id}}">{{sup.name}}</option>
+								{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="shipment_qty" class="control-label required_s shippment_input_label">出貨量</label>
+								<input type="number" class=" form-control" id="shipment_qty" name="shipment_qty" placeholder="本次出貨總重量" min="0" step="0.01" required>
+							</div>
+							<div class="form-group">
+								<label for="qty_unit7" class="control-label required_s shippment_input_label">出貨量單位</label>
+								<select title="請選擇單位" id="qty_unit7" name="shipment_qty_unit" class="selectpicker form-control" required>
+									{% for unit in weight_units %}
+										<option value="{{unit.unit_id}}">{{unit.name}}</option>
+									{% endfor %}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="package_qty" class="control-label required_s shippment_input_label">包裝重量</label>
+								<input type="number" class=" form-control" id="package_qty" placeholder="每件產品的重量" name="package_qty"  min="0" step="0.01">
+							</div>
+							<div class="form-group">
+								<label for="qty_unit8" class="control-label required_s shippment_input_label">包裝重量單位</label>
+								<select title="請選擇單位" id="qty_unit8" name="package_qty_unit" class="selectpicker form-control" required>
+									{% for unit in weight_units %}
+										<option value="{{unit.unit_id}}">{{unit.name}}</option>
+									{% endfor %}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="sales_amount" class="control-label required_s shippment_input_label">銷售總額</label>
+								<input type="number" class=" form-control" id="sales_amount" name="sales_amount" placeholder="本次出貨之銷售總額" min="0" step="0.01">
+							</div>
+							<div class="form-group">
+								<label for="stamp_flow_no" class="control-label required_s shippment_input_label">標章流水編號起迄</label>
+								<input type="text" class=" form-control" placeholder="產品標章流水號" id="stamp_flow_no" name="stamp_flow_no">
+							</div>
+							<div class="form-group">
+								<label for="item_grading1" class="control-label required_s shippment_input_label">產品等級</label>
+								<select title="請選擇出貨產品等級" name="item_grading" id="item_grading1" class="selectpicker form-control" required>
+								 {% for granding in granding_list %}
+								 	{% if granding.grading_code != 99 %}
+										<option value="{{granding.grading_code}}">{{granding.grading_code_name}}</option>
+									{% endif %}
+								{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="memo6" class="control-label shippment_input_label">備註</label>
+								<textarea name="memo" id="memo6" class="form-control" placeholder="其他補充說明"></textarea>
+							</div>
+							<input type = "submit" class="btn btn-success" value="確認送出">
+						</form>
+					</div>
+				</div>
+			</div>
+        </div>
+      </div>
+      <!-- /出货记录 -->
+
+      <!-- 销售对象联络资料 -->
+      <div class="tab-pane fade" id="SALES_INFO">
+        <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-8">
+				<div class="box">
+					<div class="box-body">
+						<div class="table_title">銷售對象聯絡資料</div>
+						<h4>用於填寫出貨紀錄</h4>
+						<form method = "post" onsubmit="return gacp_onsubmit(this,'sales_info');" action="/api/SALES_INFO">
+							<div class="form-group">
+								<label for="name" class="control-label required_s sales_info_input_label">名稱</label>
+								<input type="text" class=" form-control" id="customer_name" placeholder="該銷售對象的名稱" name="name" required>
+							</div>
+							<div class="form-group">
+								<label for="tel_no2" class="control-label required_s sales_info_input_label">電話</label>
+								<input type="text" class=" form-control" id="tel_no2" placeholder="銷售對象的聯絡電話" name="tel_no" onblur='isTel(this.value,"1")' required>
+							</div>
+							<div id="tel_box1"></div>
+							<div class="form-group">
+								<label for="farm_addr" class="control-label sales_info_input_label">地址</label>
+								<input type="text" class=" form-control" id="farm_addr" placeholder="銷售對象的聯絡地址" name="farm_addr">
+							</div>
+							<div class="form-group">
+								<label for="email2" class="control-label sales_info_input_label">e-mail</label>
+								<input type="text" class=" form-control" id="email2" placeholder="銷售對象的郵件信箱" name="email" onblur='isEmail(this.value,"1")'>
+							</div>
+							<div id="email_box1"></div>
+							<div class="form-group">
+								<label for="wechat_id" class="control-label sales_info_input_label">Line ID</label>
+								<input type="text" class=" form-control" id="wechat_id" placeholder="銷售對象的Line ID" name="wechat_id">
+							</div>
+							<div class="form-group">
+								<label for="memo7" class="control-label sales_info_input_label">備註</label>
+								<textarea name="memo" id="memo7" class="form-control" placeholder="其他補充說明"></textarea>
+							</div>
+							<input type = "submit" class="btn btn-success" value="確認送出">
+						</form>
+					</div>
+				</div>
+			</div>
+        </div>
+      </div>
+      <!-- /销售对象联络资料 -->
+
+      <!-- 肥料资材採购记录表 -->
+      <div class="tab-pane fade" id="FERT_PURCH_RECORD">
+        <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-8">
+				<div class="box">
+					<div class="box-body">
+						<div class="table_title">肥料資材採購記錄表</div>
+						<h4>同農場下的各場域能共用資材</h4>
+						<a href="/visible_material" class="btn btn-primary visible_material_manage">管理可採購資材顯示(農場內各場域共用)</a>
+						<form method = "post" onsubmit="return gacp_onsubmit(this,'fert_purch');" action="/api/FERT_PURCH_RECORD" enctype="multipart/form-data">
+							<div class="form-group">
+								<label for="region_id8" class="control-label required_s fert_purch_input_label">場域</label>
+								<select title="請選擇場域" name="region_id" id="region_id8" class="selectpicker form-control" required>
+									{% for field_id in field_id_active %}
+										<option value="{{field_id[0]}}">{{field_id[2]}}({{field_id[1]}})</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="purch_date2" class="control-label required_s fert_purch_input_label">採購日期</label>
+								<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control" id="purch_date2" name="purch_date" placeholder="" required>
+							</div>
+							<div class="form-group">
+								<label for="material_code1" class="control-label required_s fert_purch_input_label">資材</label>
+								<select title="請選擇購買的資材" id="material_code1" name="material_code" class="selectpicker form-control" required>
+									{% for material in fert_materials %}
+										<option value="{{material.item_no}}">{{material.item_name}}</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="lot_number1" class="control-label required_s fert_purch_input_label">批號</label>
+								<input type="text" class="form-control" id="lot_number1" name="lot_number" placeholder="資材的批號" onblur="isLotNumber(this.value,'1')" required>
+							</div>
+							<div id="lot_box1"></div>
+							<div class="form-group">
+								<label for="up_file7" class="control-label required_s fert_purch_input_label">上傳採購單據(僅接受jpg檔案)</label>
+								<input type="file" capture="camera" class="form-control" id="up_file7" name="up_file" accept=".jpg,.jpeg" onchange="preview(this,'fert_purch_preview')" required>
+							</div>
+							<img id="fert_purch_preview" class="preview_img" style="max-width:400px; width:100%;" src="#"/>
+							<br><br>
+							<div class="form-group">
+								<label for="qty1" class="control-label required_s fert_purch_input_label">數量</label>
+								<input type="number" class=" form-control" id="qty1" placeholder="本次採購資材的單位數" name="qty"  min="1" required>
+							</div>
+							<div class="form-group">
+								<label for="qty_unit1" class="control-label required_s fert_purch_input_label">單位</label>
+								<select title="請選擇單位" id="qty_unit1" name="qty_unit" class="selectpicker form-control" required>
+									{% for unit in material_units %}
+										<option value="{{unit.unit_id}}">{{unit.name}}</option>
+									{% endfor %}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="price1" class="control-label required_s fert_purch_input_label">單位價格</label>
+								<input type="number" class=" form-control" id="price1" placeholder="一單位資材的價格" name="price"  min="0" step="0.1" required>
+							</div>
+							<div class="form-group">
+								<label for="memo8" class="control-label fert_purch_input_label">備註</label>
+								<textarea name="memo" id="memo8" class="form-control" placeholder="其他補充說明"></textarea>
+							</div>
+							<input type = "submit" class="btn btn-success" value="確認送出">
+						</form>
+					</div>
+				</div>
+			</div>
+        </div>
+      </div>
+      <!-- /肥料资材採购记录表 -->
+
+      <!-- 防治资材採购记录表 -->
+      <div class="tab-pane fade" id="PREVE_PURCH_RECORD">
+        <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-8">
+				<div class="box">
+					<div class="box-body">
+						<div class="table_title">防治資材採購記錄表</div>
+						<h4>同農場下的各場域能共用資材</h4>
+						<a href="/visible_material" class="btn btn-primary visible_material_manage">管理可採購資材顯示(農場內各場域共用)</a>
+						<form method = "post" onsubmit="return gacp_onsubmit(this,'preve_purch');" action="/api/PREVE_PURCH_RECORD" enctype="multipart/form-data">
+							<div class="form-group">
+								<label for="region_id9" class="control-label required_s preve_purch_input_label">場域</label>
+								<select title="請選擇場域" name="region_id" id="region_id9" class="selectpicker form-control" required>
+									{% for field_id in field_id_active %}
+										<option value="{{field_id[0]}}">{{field_id[2]}}({{field_id[1]}})</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="purch_date3" class="control-label required_s preve_purch_input_label">採購日期</label>
+								<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control" id="purch_date3" name="purch_date" required>
+							</div>
+							<div class="form-group">
+								<label for="material_code2" class="control-label required_s preve_purch_input_label">資材</label>
+								<select title="請選擇購買的資材" id="material_code2" name="material_code" class="selectpicker form-control" required>
+									{% for material in prev_materials %}
+										<option value="{{material.item_no}}">{{material.item_name}}</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="lot_number2" class="control-label required_s preve_purch_input_label">批號</label>
+								<input type="text" class="form-control" id="lot_number2" name="lot_number" placeholder="資材的批號" onblur="isLotNumber(this.value,'2')" required>
+							</div>
+							<div id="lot_box2"></div>
+							<div class="form-group">
+								<label for="up_file5" class="control-label required_s preve_purch_input_label">上傳採購單據(僅接受jpg檔案)</label>
+								<input type="file" capture="camera" class="form-control" id="up_file5" name="up_file" accept=".jpg,.jpeg" onchange="preview(this,'preve_purch_preview')" required>
+							</div>
+							<img id="preve_purch_preview" class="preview_img" style="max-width:400px; width:100%;" src="#"/>
+							<br><br>
+							<div class="form-group">
+								<label for="qty2" class="control-label required_s preve_purch_input_label">數量</label>
+								<input type="number" class="form-control" id="qty2" placeholder="本次採購資材的單位數" name="qty"  min="1" required>
+							</div>
+							<div class="form-group">
+								<label for="qty_unit2" class="control-label required_s preve_purch_input_label">單位</label>
+								<select title="請選擇單位" id="qty_unit2" name="qty_unit" class="selectpicker form-control" required>
+									{% for unit in material_units %}
+										<option value="{{unit.unit_id}}">{{unit.name}}</option>
+									{% endfor %}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="price2" class="control-label required_s preve_purch_input_label">單位價格</label>
+								<input type="number" class=" form-control" id="price2" placeholder="一單位資材的價格" name="price"  min="0" step="0.1" required>
+							</div>
+							<div class="form-group">
+								<label for="memo9" class="control-label preve_purch_input_label">備註</label>
+								<textarea name="memo" id="memo9" class="form-control" placeholder="其他補充說明"></textarea>
+							</div>
+							<input type = "submit" class="btn btn-success" value="確認送出">
+						</form>
+					</div>
+				</div>
+			</div>
+        </div>
+      </div>
+      <!-- /防治资材採购记录表 -->
+
+      <!-- 其他资材採购记录表 -->
+      <div class="tab-pane fade" id="OTHER_PURCH_RECORD">
+        <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-8">
+				<div class="box">
+					<div class="box-body">
+						<div class="table_title">其他資材採購記錄表</div>
+						<h4>同農場下的各場域能共用資材</h4>
+						<a href="/visible_material" class="btn btn-primary visible_material_manage">管理可採購資材顯示(農場內各場域共用)</a>
+						<form method = "post" onsubmit="return gacp_onsubmit(this,'other_purch');" action="/api/OTHER_PURCH_RECORD" enctype="multipart/form-data">
+							<div class="form-group">
+								<label for="region_id10" class="control-label required_s other_purch_input_label">場域</label>
+								<select title="請選擇場域" name="region_id" id="region_id10" class="selectpicker form-control" required>
+									{% for field_id in field_id_active %}
+										<option value="{{field_id[0]}}">{{field_id[2]}}({{field_id[1]}})</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="purch_date4" class="control-label required_s other_purch_input_label">採購日期</label>
+								<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control" id="purch_date4" name="purch_date" required>
+							</div>
+							<div class="form-group">
+								<label for="material_code3" class="control-label required_s other_purch_input_label">資材</label>
+								<select title="請選擇購買的資材" id="material_code3" name="material_code" class="selectpicker form-control" required>
+									{% for material in other_materials %}
+										<option value="{{material.item_no}}">{{material.item_name}}</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="lot_number13" class="control-label required_s other_purch_input_label">批號</label>
+								<input type="text" class="form-control" id="lot_number3" name="lot_number" placeholder="資材的批號" onblur="isLotNumber(this.value,'3')" required>
+							</div>
+							<div id="lot_box3"></div>
+							<div class="form-group">
+								<label for="up_file6" class="control-label required_s other_purch_input_label">上傳採購單據(僅接受jpg檔案)</label>
+								<input type="file" capture="camera" class="form-control" id="up_file6" name="up_file" onchange="preview(this,'other_purch_preview')" accept=".jpg,.jpeg" required>
+							</div>
+							<img id="other_purch_preview" class="preview_img" style="max-width:400px; width:100%;" src="#"/>
+							<br><br>
+							<div class="form-group">
+								<label for="qty3" class="control-label required_s other_purch_input_label">數量</label>
+								<input type="number" class="form-control" id="qty3" placeholder="本次採購資材的單位數" name="qty"  min="1" required>
+							</div>
+							<div class="form-group">
+								<label for="qty_unit3" class="control-label required_s other_purch_input_label">單位</label>
+								<select title="請選擇單位" id="qty_unit3" name="qty_unit" class="selectpicker form-control" required>
+									{% for unit in material_units %}
+										<option value="{{unit.unit_id}}">{{unit.name}}</option>
+									{% endfor %}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="price3" class="control-label required_s other_purch_input_label">單位價格</label>
+								<input type="number" class="form-control" id="price3" placeholder="一單位資材的價格" name="price"  min="0" step="0.1" required>
+							</div>
+							<div class="form-group">
+								<label for="memo10" class="control-label other_purch_input_label">備註</label>
+								<textarea name="memo" id="memo10" class="form-control" placeholder="其他補充說明"></textarea>
+							</div>
+							<input type = "submit" class="btn btn-success" value="確認送出">
+						</form>
+					</div>
+				</div>
+			</div>
+        </div>
+      </div>
+      <!-- /其他资材採购记录表 -->
+
+      <!-- 新增種苗供應商 -->
+      <div class="tab-pane fade" id="ADD_SUP">
+        <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-8">
+				<div class="box">
+					<div class="box-body">
+						<div class="table_title">新增種苗供應商</div>
+						<h4>您購買種苗的對象(您向誰買的)</h4>
+						<form method="post" onsubmit="return gacp_onsubmit(this,'seeding_sup');" action="/api/Supplier">
+							<div class="form-group">
+								<label for="sup_name" class="required_s control-label seeding_sup_input_label">供應商名稱</label>
+								<input type="text" class="form-control" id="sup_name" name="sup_name" placeholder="供應商的名稱" required>
+							</div>
+							<div class="form-group">
+								<label for="busi_id" class="control-label seeding_sup_input_label">統編</label>
+								<input type="text" class="form-control" id="busi_id" name="busi_id" placeholder="供應商的8碼統編" onblur="isBusi(this.value,'2');">
+							</div>
+							<div id="busi_box2"></div>
+							<div class="form-group">
+								<label for="user_name" class="control-label seeding_sup_input_label">聯絡人</label>
+								<input type="text" class="form-control" id="user_name" name="user_name" placeholder="供應商的聯絡人姓名">
+							</div>
+							<div class="form-group">
+								<label for="tel_no" class="required_s control-label seeding_sup_input_label">供應商電話</label>
+								<input type="text" class="form-control" id="tel_no" name="tel_no" placeholder="供應商/聯絡人的電話" onblur="isTel(this.value,'2');" required>
+							</div>
+							<div id="tel_box2"></div>
+							<div class="form-group">
+								<label for="sup_addr" class="control-label seeding_sup_input_label">供應商地址</label>
+								<input type="text" class="form-control" id="sup_addr" name="sup_addr" placeholder="供應商的地址">
+							</div>
+							<div class="form-group">
+								<label for="email" class="control-label seeding_sup_input_label">供應商電子信箱</label>
+								<input type="text" class="form-control" id="email" name="email" placeholder="供應商的E-mail" onblur="isEmail(this.value,'2');">
+							</div>
+							<div id="email_box2"></div>
+							<div class="form-group">
+								<label for="line" class="control-label seeding_sup_input_label">供應商Line</label>
+								<input type="text" class="form-control" id="line" name="line" placeholder="供應商的Line">
+							</div>
+							<div class="form-group">
+								<label for="memo11" class="control-label seeding_sup_input_label">備註</label>
+								<textarea name="memo" id="memo11" class="form-control" placeholder="其他補充說明"></textarea>
+							</div>
+							<input type = "submit" class="btn btn-success" value="確認送出">
+						</form> 
+					</div>
+					</div>
+				</div>
+			</div>
+		</div>
+      <!-- /新增種苗供應商 -->
+
+      <!-- 新增非有機認證資材 -->
+	  {% if session['is_organic'] == "false" %}
+      <div class="tab-pane fade" id="ADDMATERIAL">
+        <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-8">
+				<div class="box">
+					<div class="box-body">
+						<div class="table_title">新增非有機認證資材</div>
+						<h4>於此添加的資材無法使用於有機模式</h4>
+						<form method="post" onsubmit="return gacp_onsubmit(this,'add_material');" action="/api/ADDMATERIAL">
+							<div class="form-group">
+								<label for="item_name" class="required_s control-label add_material_input_label">廠牌/資材名稱</label>
+								<input type="text" class="form-control" id="item_name" name="item_name" placeholder="資材完整名稱">
+							</div>
+							<div class="form-group">
+								<label for="type_code" class="required_s control-label add_material_input_label">資材種類</label>
+									<select title="請選擇資材種類(對應資材採購)" id="type_code" name="type_code" class="selectpicker form-control" required>
+										{% for type in item_types %}
+											<option value="{{type.type_code}}">{{type.type_name}}</option>
+										{% endfor %}
+									</select>
+							</div>
+							<div class="form-group">
+								<label for="label" class="control-label required_s add_material_input_label">廠商(製造商/代理商)</label>
+								<input type="text" class="form-control" id="label" name="label" placeholder="資材的廠商 如:台肥" required>
+							</div>
+							<div class="form-group">
+								<label for="ingredients" class="control-label add_material_input_label">成分</label>
+								<input type="text" class="form-control" id="ingredients" name="ingredients" placeholder="如:有機質80% 礦物油99%">
+							</div>
+							<input type = "submit" class="btn btn-success" value="確認送出">
+						</form> 
+					</div>
+					</div>
+				</div>
+			</div>
+		</div>
+      <!-- /新增非有機認證資材 -->
+	{% endif %}
+
+      <!-- 各种检验分析表黏贴处 -->
+      <div class="tab-pane fade" id="OTHER_INSPECTION_INFO">
+        <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-8">
+				<div class="box">
+					<div class="box-body">
+						<div class="table_title">各種檢驗分析表照片</div>
+						<h4>上傳水源、土壤、作物等檢驗相關的報告</h4>
+						<form method="post" onsubmit="return gacp_onsubmit(this,'inspection');" action="/api/OTHER_INSPECTION_INFO" enctype="multipart/form-data">
+							<div class="form-group">
+								<label for="region_id12" class="control-label required_s inspection_input_label">場域</label>
+								<select title="請選擇場域" name="region_id" id="region_id12" class="selectpicker form-control" required>
+									{% for field_id in field_id_active %}
+										<option value="{{field_id[0]}}">{{field_id[2]}}({{field_id[1]}})</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="up_file3" class="control-label required_s inspection_input_label">上傳檔案(僅接受jpg檔案)</label>
+								<input type="file" capture="camera" class="form-control" id="up_file3" name="up_file" onchange="preview(this,'inspection_preview')" accept=".jpg,.jpeg" required>
+							</div>
+							<img id="inspection_preview" class="preview_img" style="max-width:400px; width:100%;" src="#"/>
+							<br><br>
+							<div class="form-group">
+								<label for="up_date2" class="control-label required_s inspection_input_label">日期</label>
+								<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control" id="up_date2" name="up_date" required>
+							</div>
+							<div class="form-group">
+								<label for="memo12" class="control-label inspection_input_label">內容</label>
+								<textarea name="memo" id="memo12" class="form-control" placeholder="其他補充說明"></textarea>
+							</div>
+							<input type = "submit" class="btn btn-success" value="確認送出">
+						</form> 
+					</div>
+				</div>
+			</div>
+        </div>
+      </div>
+      <!-- /各种检验分析表黏贴处 -->
+
+	  <!-- 各項認證標章 -->
+      <div class="tab-pane fade" id="CERTIFICATE_MRAK">
+        <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-8">
+				<div class="box">
+					<div class="box-body">
+						<div class="table_title">各項認證標章</div>
+						<h4>於此添加的標章會顯示於溯源紀錄</h4>
+						<form method="post" onsubmit="return gacp_onsubmit(this,'certificate');" action="/api/CERTIFICATE_MRAK" enctype="multipart/form-data">
+							<div class="form-group">
+								<label for="region_id14" class="control-label required_s certificate_input_label">場域</label>
+								<select title="請選擇場域" name="region_id" id="region_id14" class="selectpicker form-control" required>
+									{% for field_id in field_id_active %}
+										<option value="{{field_id[0]}}">{{field_id[2]}}({{field_id[1]}})</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="certificate_list_id" class="control-label required_s">標章</label>
+								<select title="請選擇標章種類" name="certificate_list_id" id="certificate_list_id" class="selectpicker form-control" required>
+									{% for certificate in certificate_list %}
+										<option data-content="<img class='certificate_mark_small' src='{{certificate.mark_image_addr}}'></img> {{certificate.mark_name}}" value="{{certificate.certificate_list_id}}"></option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group mark_place_holder">
+								<label for="up_file4" class="control-label required_s certificate_input_label">上傳認證證書照片(僅接受jpg檔案)</label>
+								<input type="file" capture="camera" class="form-control" id="up_file4" name="up_file" onchange="preview(this,'certificate_preview')" accept=".jpg,.jpeg" required>
+							</div>
+							<img id="certificate_preview" class="preview_img" style="max-width:400px; width:100%;" src="#"/>
+							<br><br>
+							<div class="form-group">
+								<label for="up_date3" class="control-label required_s certificate_input_label">有效日期</label>
+								<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control" id="up_date3" name="up_date" required>
+							</div>
+							<input type = "submit" class="btn btn-success" value="確認送出">
+						</form> 
+					</div>
+				</div>
+			</div>
+        </div>
+      </div>
+      <!-- /各項認證標章 -->
+
+      <!-- 其他记事 -->
+      <div class="tab-pane fade" id="OTHER_NOTES">
+        <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-8">
+				<div class="box">
+					<div class="box-body">
+						<div class="table_title">其他記事</div>
+						<h4>任何其他表單不適用的紀錄內容</h4>
+						<form method="post" onsubmit="return gacp_onsubmit(this,'other_notes');" action="/api/OTHER_NOTES">
+							<div class="form-group">
+								<label for="region_id13" class="control-label required_s other_notes_input_label">場域</label>
+								<select title="請選擇場域" name="region_id" id="region_id13" class="selectpicker form-control" required>
+									{% for field_id in field_id_active %}
+										<option value="{{field_id[0]}}">{{field_id[2]}}({{field_id[1]}})</option>
+									{% endfor%}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="other_date" class="control-label required_s other_notes_input_label">日期</label>
+								<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control" id="other_date" name="other_date" required>
+							</div>
+							<div class="form-group">
+								<label for="memo13" class="control-label other_notes_input_label">內容</label>
+								<textarea name="memo" id="memo13" class="form-control" placeholder="其他補充說明"></textarea>
+							</div>
+							<input type = "submit" class="btn btn-success" value="確認送出">
+						</form> 
+					</div>
+					</div>
+				</div>
+			</div>
+		</div>
+      <!-- /其他记事 -->
+
+
+	  <div class="modal fade" id="add_control_obj_modal" tabindex="-1" role="dialog" aria-labelledby="add_control_obj_title"
+      aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="add_control_obj_title">新增防治對象</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="form-group row">
+                <div class="col-xs-12">
+                  <label for="control_obj_name" style="max-width:200px">防治對象名稱</label>
+                  <input type="text" id="control_obj_name" placeholder="新增前請確認不在列表之內" class="form-control" required>
+                </div>
+              </div>
+              <button type="button" onclick="add_control_obj()" class="btn btn-success">確定新增</button>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+	<div class="modal fade" id="add_seed_modal" tabindex="-1" role="dialog" aria-labelledby="add_seed_title"
+	aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title" id="add_seed_title">新增品種</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<form>
+				<div class="form-group row">
+					<div class="col-xs-12">
+						<div class="table_title">新增品種</div>
+						<h4>作物種類為了因應產銷溯源的價格趨勢查詢有所限制，若為較少見之種類請選擇接近的種類</h4>
+						<br>
+						<label for="type_code" class="required_s control-label add_material_input_label">作物種類</label>
+						<select title="請選擇作物種類" id="cultivar_id" name="cultivar_id" class="selectpicker form-control" data-live-search="true" required>
+						</select>
+					</div>
+				</div>
+				<div class="form-group row">
+					<div class="col-xs-12">
+						<label for="seed_name" style="max-width:200px">品種名稱</label>
+						<input type="text" id="seed_name" placeholder="新增前請確認不在列表之內" class="form-control" required>
+					</div>
+				</div>
+				<button type="button" onclick="add_seed()" class="btn btn-success">確定新增</button>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+			</div>
+			</div>
+		</div>
+	</div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block page_script %}
+<!-- CDNJS :: Sortable (https://cdnjs.com/) -->
+<script src="//cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js"></script>
+<!-- CDNJS :: Vue.Draggable (https://cdnjs.com/) -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.15.0/vuedraggable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.9/dist/js/bootstrap-select.min.js"></script>
+<script>
+var params = new URLSearchParams(document.location.search.substring(1));
+var somethingbad = params.get("somethingbad");
+var is_organic = params.get("is_organic");
+
+if (somethingbad){
+	gacp_error_handler(somethingbad)
+}else{
+	if (is_organic){
+		if(is_organic == "true"){
+			localStorage.setItem("is_organic","true")
+			$("#organic_mode_text").html("有機")
+		}else if(is_organic == "false"){
+			localStorage.setItem("is_organic","false")
+			$("#organic_mode_text").html("非有機")
+		}else{
+			localStorage.setItem("is_organic","false")
+			$("#organic_mode_text").html("非有機")
+		}
+	}else{
+		if(localStorage.getItem("is_organic")){
+			var stoage_organic = localStorage.getItem("is_organic");
+			location.replace(location.pathname + "?is_organic=" + localStorage.getItem("is_organic"))
+		}else{
+			location.replace(location.pathname + "?is_organic=false")
+		}
+	}
+}
+
+function gacp_error_handler(bad_code){
+	switch(bad_code){
+		case '991':
+			sweet_alert_somethingbad("總產出需要於分級和貯藏方式中「兩者都」選擇總產出");
+			break;
+		case '992':
+			sweet_alert_somethingbad("總產出已經輸入過了，如果輸入錯誤請至GACP查詢處修改");
+			break;
+		default:
+			sweet_alert_somethingbad("請確認是否重複輸入GACP紀錄或該場域GACP已關閉");
+			break;
+	}
+}
+
+function sweet_alert_somethingbad(alert_text){
+	Swal.fire({
+		icon: 'error',
+		title: alert_text
+		}).then((result) =>{
+		history.go(-1);
+	})
+}
+
+$(function() {
+    $('.selectpicker').selectpicker();
+	$(".seed_hide_box").hide()
+	$("optgroup[label='耕地管理']").children().prop('disabled', true);
+	$("optgroup[label='育苗/種植']").children().prop('disabled', true);
+	$("optgroup[label='栽培管理']").children().prop('disabled', true);
+});
+
+function isEmail(str,num) {
+	if (str.search(/\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}/) != -1){
+		$("#email_alert_text"+num).remove();
+		return true;
+	}
+	else{
+		$("#email_alert_text"+num).remove();
+		$("#email_box"+num).append('<p id="email_alert_text'+num+'" style="color:red;">請輸入有效郵件地址</p>');
+	}
+}
+
+function isTel(str,num) {
+	if (str.search(/^\d{7,17}$/) != -1){
+		$("#tel_alert_text"+num).remove();
+		return true;
+	}
+	else{
+		$("#tel_alert_text"+num).remove();
+		$("#tel_box"+num).append('<p id="tel_alert_text'+num+'" style="color:red;">請輸入有效電話號碼</p>');
+	}
+}
+
+function isBusi(str,num){
+	if (str.search(/^\d{8}$/) != -1){
+		$("#busi_alert_text"+num).remove();
+		return true;
+	}
+	else{
+		$("#busi_alert_text"+num).remove();
+		$("#busi_box"+num).append('<p id="busi_alert_text'+num+'" style="color:red;">請輸入有效統編</p>');
+	}
+}
+
+function isLotNumber(str,num){
+	if (str.search(/^[A-Za-z0-9]+$/) != -1){
+		$("#lot_alert_text"+num).remove();
+		return true;
+	}
+	else{
+		$("#lot_alert_text"+num).remove();
+		$("#lot_box"+num).append('<p id="lot_alert_text'+num+'" style="color:red;">請輸入有效批號</p>');
+	}
+}
+
+function selfReserved(obj){
+	var val = $(obj).val()
+	if (val==1){
+		$(".seed_hide_box").hide()
+		$("#sup_id4").val($("#sup_id4").prop('defaultSelected'))
+		$('#sup_id4').selectpicker('refresh');
+		$("#purch_date1").val("")
+	}else{
+		$(".seed_hide_box").show()
+	}
+	return;
+}
+
+function recordindex(obj){
+	var val = $(obj).val()
+	if (val == 1){
+		$("optgroup[label='耕地管理']").children().prop('disabled', null);
+		$("optgroup[label='育苗/種植']").children().prop('disabled', true);
+		$("optgroup[label='栽培管理']").children().prop('disabled', true);
+		$("#record_item1").val($("#record_item1").prop('defaultSelected'))
+		$('#record_item1').selectpicker('refresh');
+	}else if (val == 2){
+		$("optgroup[label='耕地管理']").children().prop('disabled', true);
+		$("optgroup[label='育苗/種植']").children().prop('disabled', null);
+		$("optgroup[label='栽培管理']").children().prop('disabled', true);
+		$("#record_item1").val($("#record_item1").prop('defaultSelected'))
+		$('#record_item1').selectpicker('refresh');
+	}else if (val == 3){
+		$("optgroup[label='耕地管理']").children().prop('disabled', true);
+		$("optgroup[label='育苗/種植']").children().prop('disabled', true);
+		$("optgroup[label='栽培管理']").children().prop('disabled', null);
+		$("#record_item1").val($("#record_item1").prop('defaultSelected'))
+		$('#record_item1').selectpicker('refresh');
+	}
+	
+}
+
+//出货记录汇入采收后记录的数据
+function add_no_option(region_id,no_id,list,column){
+	$("."+no_id+"_option").remove();
+	let no_array = new Array();
+	let val = $("#"+region_id).val();
+	for(var info in list){
+		if((list[info]["region_id"] == val )&&(list[info][column])){
+			no_array[list[info][column]] = true;
+		}
+	}
+	let newkey = Object.keys(no_array).sort();
+	let sorted_no_array = new Array();
+	for(var i = 0; i < newkey.length; i++){
+		sorted_no_array[newkey[i]] = no_array[newkey[i]]; 
+	}
+	for(var no in sorted_no_array){
+		$("#"+no_id).append($("<option class='"+no_id+"_option'></option>").attr("value",no).text(no));
+	}
+	$('#'+no_id).selectpicker('refresh');
+}
+
+var phv_list = {{post_harvest_list|tojson}}
+
+$("#region_id7").change(function(){
+	add_no_option("region_id7","harvest_no1",phv_list,"word_date")
+})
+
+$('.output').on('changed.bs.select', function (e, clickedIndex, newValue, oldValue) {
+    if ($(this).val() == 99){
+		if(oldValue != 99){
+			$(".output_alert").remove();
+			$('.output').selectpicker('val', 99);
+		}
+		$(".output_btn").attr("disabled",false);
+	}else{
+		$(".output_alert").remove();
+		$(".output_btn").attr("disabled",false);
+		$('.output').each(function(){
+			if($(this).val() == 99){
+				$(this).parent(".bootstrap-select").after("<div class='output_alert' style='color:red;'>填寫總產出需要分級和貯藏方式都為總產出</div>");
+				$(".output_btn").attr("disabled",true);
+			}
+		})
+	}
+});
+
+function create_submit_alert_check(text_dict){
+	var result = ""
+	for (key in text_dict){
+		result = result + "<div style='text-align:left;'>" + key + " : " + text_dict[key] + "</div>"
+	}
+	return result
+}
+
+//送出表單前雙重確認
+function gacp_onsubmit(obj,table_name=false){
+	var alert_text_dict = {}
+	if (table_name){
+		$("."+table_name+"_input_label").each(
+			function(){
+				var input_area = $(this).next()
+				let tag_name = input_area.prop('tagName')
+				switch (tag_name){
+					case "DIV"://if tag is div , it is selectpicker button
+						alert_text_dict[$(this).text()] = input_area.find(":selected").text()
+						break;
+					case "INPUT":
+						if (input_area.prop("type") == "file"){
+							alert_text_dict[$(this).text()] = "<img style='max-width:400px;width:100%;' src='"+$("#"+table_name+"_preview").prop("src")+"'><br><br>"
+						}else{
+							alert_text_dict[$(this).text()] = input_area.val()
+						}
+						break;
+					case "TEXTAREA":
+						alert_text_dict[$(this).text()] = input_area.val()
+						break;
+					default:
+						break;
+				}
+			}
+		)
+	}
+	
+	Swal.fire({
+		title: "確定要送出?",
+		html: "<div>請確認資料輸入</div><br>" + create_submit_alert_check(alert_text_dict),
+		icon: 'warning',
+		showCancelButton: true,
+		confirmButtonColor: '#3085d6',
+		cancelButtonColor: '#d33',
+		confirmButtonText: "確定",
+		cancelButtonText: "取消"
+	}).then((result) => {
+		if(result.value){
+			Swal.fire({
+				title: "真的確定要送出?",
+				text: "請進行第二次確認",
+				icon: 'warning',
+				showCancelButton: true,
+				position: 'top',
+				confirmButtonColor: '#3085d6',
+				cancelButtonColor: '#d33',
+				confirmButtonText: "確定",
+				cancelButtonText: "取消"
+			}).then((result2) => {
+				if(result2.value){
+				Swal.fire({
+					icon: 'success',
+					title: "表單已送出",
+				})
+				obj.submit();
+				}
+			})
+		}
+		})
+    return false;
+}
+
+$(".required_s").prepend("<span style='color:red;'>*</span>");
+
+//圖片預覽
+function preview(file,selector){
+	if (file.files && file.files[0]) {
+		var reader = new FileReader();
+		
+		reader.onload = function(e) {
+			$("#"+selector).attr('src', e.target.result);
+			$("#"+selector).show()
+		}
+		
+		reader.readAsDataURL(file.files[0]);
+	}
+	else{
+		$("#"+selector).attr('src', "#");
+		$("#"+selector).hide()
+	}
+}
+
+$(function(){
+	$(".gacp_nav_tag_link").on("shown.bs.tab",function(){
+		let id = $(this).prop("id").split("to_")[1]
+		$("#"+id)[0].scrollIntoView(true);
+	})
+	$(".preview_img").each(function(){
+		if($(this).attr("src") == "#"){
+			console.log($(this).attr("src"))
+			$(this).hide()
+		}else{
+			console.log($(this).attr("src"))
+		}
+	})
+})
+
+$(window).on("load",function(){
+	window.setTimeout(function(){
+		if (!localStorage.getItem("readed_warning_page")){
+			$("#tab_warning_page a").tab('show')
+			$("#warning_page")[0].scrollIntoView({behavior: "smooth",block: "start"});
+		}
+		
+	})
+})
+
+$(".readed_btn").on("click",function(){
+	localStorage.setItem("readed_warning_page", true)
+	$('html,body').animate({scrollTop:0}, 333);
+})
+
+function add_control_obj(){
+	var obj_name = $('#control_obj_name').val()
+	$.ajax(
+		{
+			url:'/api/add_control_obj',
+			type: 'POST',
+			data: JSON.stringify({'obj_name':obj_name}),
+            contentType:"application/json; charset=utf-8"
+		}
+	).done(function(data){
+		let id = data['id']
+		let name = data['name']
+		$("#control_obj_code1").append(`<option value="${id}">${name}</option>`);
+		$("#control_obj_code1").val(id)
+		$("#control_obj_code1").selectpicker("refresh");
+		Swal.fire({
+			icon: 'success',
+			title: "添加成功",
+		})
+	}).fail(function(error){
+		Swal.fire({
+			icon: 'error',
+			title: "添加失敗，請確認是否已存在",
+		})
+	})
+}
+
+var cultivar_flag = false
+$("#add_seed_modal").on("show.bs.select",function(){
+	if (!cultivar_flag){
+		$.ajax(
+			{
+				url:'/api/get_cultivar',
+				type: 'GET'
+			}
+		).done(function(datas){
+				console.log(datas)
+				for (data in datas){
+					$("#cultivar_id").append(`<option value="${datas[data].id}">${datas[data].name}</option>`)
+				}
+				$("#cultivar_id").selectpicker("refresh");
+			}
+		).fail(function(){
+				Swal.fire({
+				icon: 'error',
+				title: "取得作物種類失敗",
+			})
+		})
+	}
+})
+
+function add_seed(){
+	var cultivar_id = $('#cultivar_id').val()
+	var seed_name = $('#seed_name').val()
+	$.ajax(
+		{
+			url:'/api/add_seed',
+			type: 'POST',
+			data: JSON.stringify({'cultivar_id':cultivar_id,'seed_name':seed_name}),
+            contentType:"application/json; charset=utf-8"
+		}
+	).done(function(data){
+		let id = data['id']
+		let name = data['name']
+		$("#material1").append(`<option value="${id}">${name}</option>`);
+		$("#material1").val(id)
+		$("#material1").selectpicker("refresh");
+		Swal.fire({
+			icon: 'success',
+			title: "添加成功",
+		})
+	}).fail(function(error){
+		Swal.fire({
+			icon: 'error',
+			title: "添加失敗，請確認是否已存在",
+		})
+	})
+}
+
+</script>
+
+{% endblock %}

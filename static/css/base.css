@@ -1,0 +1,116 @@
+textarea {
+    width:100%;
+    resize: none;
+}
+
+.content-header{
+    margin-bottom: 15px;
+}
+
+.skin-black-iot .main-header .navbar {
+    background-color: #007979;
+}
+
+.skin-black-iot .main-header .navbar a span,.skin-black-iot .main-header .navbar > .sidebar-toggle{
+    color:#ffffff;
+}
+
+section {
+    background-color: #d7ebe2;
+}
+
+.skin-black-iot .sidebar li {
+    border: 0.2px solid;
+    border-color: #007979;
+    margin-bottom: -0.2px;
+}
+
+.skin-black-iot .sidebar a {
+    color: #53585a;
+}
+
+.skin-black-iot .wrapper, .skin-black-iot .main-sidebar, .skin-black-iot .left-side{
+    background-color: #d7ebe2;
+}
+
+.content-wrapper {
+    background-color: #d7ebe2;
+}
+
+header,header a,header a span{
+    background-color: #007979;
+}
+
+.skin-black-iot .sidebar-menu > li:hover > a, .skin-black-iot .sidebar-menu > li.active > a, .skin-black-iot .sidebar-menu > li.menu-open > a {
+    color: #ffffff;
+    background: #3d885c;
+}
+
+.skin-black-iot .main-header > .logo:hover {
+    background-color:#007979;
+    color:black;
+}
+
+.skin-black-iot .main-header > .logo{
+    background-color:#007979;
+    color:#ffffff;
+}
+
+.skin-black-iot .main-header .navbar .sidebar-toggle:hover {
+    background-color:#007979;
+    color:black;
+}
+
+.skin-black-iot .main-header .navbar .nav > li > a:hover, .skin-black-iot .main-header .navbar .nav > li > a:active, .skin-black-iot .main-header .navbar .nav > li > a:focus, .skin-black-iot .main-header .navbar .nav .open > a, .skin-black-iot .main-header .navbar .nav .open > a:hover, .skin-black-iot .main-header .navbar .nav .open > a:focus, .skin-black-iot .main-header .navbar .nav > .active > a {
+    background-color:#007979;
+    color:black;
+}
+
+
+.skin-black-iot .sidebar-menu > li:hover > a, .skin-black-iot .sidebar-menu > li.active > a, .skin-black-iot .sidebar-menu > li.menu-open > a{
+    background-color:#007979;
+    color:#ffffff;    
+}
+
+.content-wrapper{
+    background-color:#d7ebe2;
+}
+
+.login-page, .register-page{
+    background-color:#d7ebe2;
+}
+
+.sidebar{
+    padding-bottom: 0px;
+}
+
+.main-footer {
+    background: #d7ebe2;
+    border-top: 0.2px solid;
+    border-color: #007979;
+    margin-top:-0.4px;
+}
+
+.main-sidebar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding-top: 50px;
+    min-height: 100%;
+}
+
+p,h1,h2,h3,h4,h5,h6,span,a,option,input,select,textarea,th,tr,td,button,b,div{
+    font-family: 'Noto Sans TC', sans-serif;
+}
+
+.box.box-primary {
+    border-top-color: #007979;
+}
+
+.skin-black-iot .main-header .navbar a span:hover {
+    color:black;
+}
+
+.field_data_child,.crop_record_child,.system_management_child{
+    display: none;
+}

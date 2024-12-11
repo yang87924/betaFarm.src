@@ -1,0 +1,709 @@
+{% extends 'base/base.html' %} 
+
+{% block page_title %} 基本資訊 {% endblock %}
+
+
+{% block page_content %}
+<script type="text/x-template" id="field-sensor-table-template">
+<table class="table table-bordered table-hover dataTable">
+<thead>
+  <tr>
+    <th></th>
+    <th>name</th>
+    <th>df_name</th>
+    <th>alias</th>
+    <th>unit</th>
+    <th>icon</th>
+    <th>bg_color</th>
+  </tr>
+</thead>
+</table>
+</script>
+  <!-- TODO: combine MODAL -->
+  <div class="nav-tabs-custom" id="app">
+    <ul class="nav nav-tabs">
+      <li class="" id="tab_LOCAL_AGENT_INFO">
+        <a href="#LOCAL_AGENT_INFO" data-toggle="tab">地方代理商基本資訊</a>
+      </li>
+      <li class="" id="tab_PROV_LICE_INFO">
+        <a href="#PROV_LICE_INFO" data-toggle="tab">區域授權商基本資訊</a>
+      </li>
+      <li class="" id="tab_FIELD_INFO">
+        <a href="#FIELD_INFO" data-toggle="tab">農場場域基本資訊</a>
+      </li>
+      <li class="" id="tab_FARM_INFO">
+        <a href="#FARM_INFO" data-toggle="tab">農場基本資訊</a>
+      </li>
+      <li class="" id="tab_LOCAL">
+        <a href="#LOCAL" data-toggle="tab">地方基本資訊</a>
+      </li>
+      <li class="" id="tab_PROVINCE">
+        <a href="#PROVINCE" data-toggle="tab">省市基本資料</a>
+      </li>
+      <li class="" id="tab_REGION">
+        <a href="#REGION" data-toggle="tab">區域基本資料</a>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+
+      <!-- 地方代理商基本資訊 -->
+      <div class="tab-pane" id="LOCAL_AGENT_INFO">
+        <div class="row">
+          <div class="col-md-2"></div>
+          <div class="col-md-8">
+            <div class="box">
+            
+              <!-- body table -->
+              <div class="box-body">
+                <form method="post" action="/api/LOCAL_AGENT_INFO">
+                  <table class="table table-bordered table-hover dataTable">
+                    <tbody>
+                      <tr>
+                        <th width="25%">項目</th>
+                        <th width="75%">資料</th>
+                      </tr>
+                      <tr>
+                        <td width="25%">
+                          <p>地方代理商代碼</p>
+                        </td>
+                        <td width="75%">
+                            <input type="number" id="local_agent_id" name="local_agent_id" min="0" required> 
+                        </td>
+                      </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>區域編碼</p>
+                          </td>
+                          <td>
+                            <input type="number" id="local_id" name="local_id" min="0" required>
+                          </td width="75%">
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>省市編號</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="province_id" name="province_id" min="0" required>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>地方代理商名稱</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="local_agent_name" name="local_agent_name" required>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>地方代理商地址</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="local_agent_addr" name="local_agent_addr" required> 
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>地方代理商電話</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="tel_no" name="tel_no" required>
+                          </td>
+                        </tr>
+                    </tbody>
+                  </table>
+                  <input type = "submit" value="確認送出">
+                </form> 
+              </div>
+              <!-- /body table -->
+            </div>
+            <!-- /box -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 區域授權商基本資訊 -->
+      <div class="tab-pane" id="PROV_LICE_INFO">
+        <div class="row">
+          <div class="col-md-2"></div>
+          <div class="col-md-8">
+            <div class="box">
+            
+              <!-- body table -->
+              <div class="box-body">
+                <form method="post" action="/api/PROV_LICE_INFO">
+                  <table class="table table-bordered table-hover dataTable">
+                    <tbody>
+                      <tr>
+                        <th width="25%">項目</th>
+                        <th width="75%">資料</th>
+                      </tr>
+                      <tr>
+                        <td width="25%">
+                          <p>區域授權商編號</p>
+                        </td>
+                        <td width="75%">
+                            <input type="number" id="proc_lice_id" name="proc_lice_id" min="0" required> 
+                        </td>
+                      </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>省市編號</p>
+                          </td>
+                          <td>
+                            <input type="number" id="province_id" name="province_id" min="0" required>
+                          </td width="75%">
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>區域授權商名稱</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="proc_lice_name" name="proc_lice_name" min="0" required>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>區域授權商地址</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="proc_lice_addr" name="proc_lice_addr" required>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>區域授權商電話</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="tel_no" name="tel_no" required> 
+                          </td>
+                        </tr>
+                    </tbody>
+                  </table>
+                  <input type = "submit" value="確認送出">
+                </form> 
+              </div>
+              <!-- /body table -->
+            </div>
+            <!-- /box -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 農場場域基本資訊 -->
+      <div class="tab-pane" id="FIELD_INFO">
+        <div class="row">
+          <div class="col-md-2"></div>
+          <div class="col-md-8">
+            <div class="box">
+            
+              <!-- body table -->
+              <div class="box-body">
+                <form method="post" action="/api/FIELD_INFO">
+                  <table class="table table-bordered table-hover dataTable">
+                    <tbody>
+                      <tr>
+                        <th width="25%">項目</th>
+                        <th width="75%">資料</th>
+                      </tr>
+                      <tr>
+                        <td width="25%">
+                          <p>農場區域編號</p>
+                        </td>
+                        <td width="75%">
+                            <input type="number" id="field_id" name="field_id" min="0" required> 
+                        </td>
+                      </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>農場編號</p>
+                          </td>
+                          <td>
+                            <input type="number" id="farm_id" name="farm_id" min="0" required> 
+                          </td width="75%">
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>可耕種面積</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="arable_area" name="arable_area" min="0" required>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>農場區域使用者</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="field_user" name="field_user" required>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>農業設施代碼</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="field_facility" name="field_facility" min="0" required> 
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>土壤種類代碼</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="soil_type" name="soil_type" min="0" required>
+                          </td>
+                        </tr>                     
+                        <tr>
+                          <td width="25%">
+                            <p>耕種方式代碼</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="field_method" name="field_method" min="0" required>
+                          </td>
+                        </tr>                        
+                        <tr>
+                          <td width="25%">
+                            <p>建立日期</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="create_date" name="create_date" min="0" required>
+                          </td>
+                        </tr>                        
+                        <tr>
+                          <td width="25%">
+                            <p>建立者</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="create_user" name="create_user" min="0" required>
+                          </td>
+                        </tr>                        
+                        <tr>
+                          <td width="25%">
+                            <p>修改日期</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="update_date" name="update_date" min="0" required>
+                          </td>
+                        </tr>                        
+                        <tr>
+                          <td width="25%">
+                            <p>修改者</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="update_user" name="update_user" min="0" required>
+                          </td>
+                        </tr>
+                    </tbody>
+                  </table>
+                  <input type = "submit" value="確認送出">
+                </form> 
+              </div>
+              <!-- /body table -->
+            </div>
+            <!-- /box -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- 農場基本資訊 -->
+      <div class="tab-pane" id="FARM_INFO">
+        <div class="row">
+          <div class="col-md-2"></div>
+          <div class="col-md-8">
+            <div class="box">
+            
+              <!-- body table -->
+              <div class="box-body">
+                <form method="post" action="/api/FARM_INFO">
+                  <table class="table table-bordered table-hover dataTable">
+                    <tbody>
+                      <tr>
+                        <th width="25%">項目</th>
+                        <th width="75%">資料</th>
+                      </tr>
+                      <tr>
+                        <td width="25%">
+                          <p>農場編號</p>
+                        </td>
+                        <td width="75%">
+                            <input type="number" id="farm_id" name="farm_id" min="0" required> 
+                        </td>
+                      </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>區域編號</p>
+                          </td>
+                          <td>
+                            <input type="number" id="region_id" name="region_id" min="0" required> 
+                          </td width="75%">
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>省市編號</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="province_id" name="province_id" min="0" required> 
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>地方編號</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="local_id" name="local_id" min="0" required> 
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>區域授權商編號</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="local_agent_id" name="local_agent_id" min="0" required> 
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>農場地址(地號)</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="farm_addr" name="farm_addr" required>
+                          </td>
+                        </tr>                        
+                        <tr>
+                          <td width="25%">
+                            <p>農場面積</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="farm_area" name="farm_area" min="0" required>
+                          </td>
+                        </tr>                        
+                        <tr>
+                          <td width="25%">
+                            <p>可耕種面積</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="arable_area" name="arable_area" min="0" required>
+                          </td>
+                        </tr>                        
+                        <tr>
+                          <td width="25%">
+                            <p>農場主名稱</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="farm_user" name="farm_user" required>
+                          </td>
+                        </tr>                        
+                        <tr>
+                          <td width="25%">
+                            <p>農場主編號</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="farm_name" name="farm_name" required>
+                          </td>
+                        </tr>                        
+                        <tr>
+                          <td width="25%">
+                            <p>農場主聯絡電話</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="tel_no" name="tel_no" min="0" required>
+                          </td>
+                        </tr>                        
+                        <tr>
+                          <td width="25%">
+                            <p>農場主Email</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="email" name="email" required>
+                          </td>
+                        </tr>                        
+                        <tr>
+                          <td width="25%">
+                            <p>農場主微信</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="wechat_id" name="wechat_id" required>
+                          </td>
+                        </tr>                        
+                        <tr>
+                          <td width="25%">
+                            <p>建立日期</p>
+                          </td>
+                          <td width="75%">
+                            <input type="date" id="create_date" name="create_date" required>
+                          </td>
+                        </tr>                        
+                        <tr>
+                          <td width="25%">
+                            <p>建立者</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="create_user" name="create_user" required>
+                          </td>
+                        </tr>                        
+                        <tr>
+                          <td width="25%">
+                            <p>修改日期</p>
+                          </td>
+                          <td width="75%">
+                            <input type="date" id="update_date" name="update_date" required>
+                          </td>
+                        </tr>                        
+                        <tr>
+                          <td width="25%">
+                            <p>修改者</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="update_user" name="update_user" required>
+                          </td>
+                        </tr>
+                    </tbody>
+                  </table>
+                  <input type = "submit" value="確認送出">
+                </form> 
+              </div>
+              <!-- /body table -->
+            </div>
+            <!-- /box -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 地方基本資訊 -->
+      <div class="tab-pane" id="LOCAL">
+        <div class="row">
+          <div class="col-md-2"></div>
+          <div class="col-md-8">
+            <div class="box">
+            
+              <!-- body table -->
+              <div class="box-body">
+                <form method="post" action="/api/LOCAL">
+                  <table class="table table-bordered table-hover dataTable">
+                    <tbody>
+                      <tr>
+                        <th width="25%">項目</th>
+                        <th width="75%">資料</th>
+                      </tr>
+                      <tr>
+                        <td width="25%">
+                          <p>地方編碼</p>
+                        </td>
+                        <td width="75%">
+                            <input type="number" id="local_id" name="local_id" min="0" required> 
+                        </td>
+                      </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>地方名稱</p>
+                          </td>
+                          <td>
+                            <input type="text" id="local_name" name="local_name" required> 
+                          </td width="75%">
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>地方英譯</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="local_en_name" name="local_en_name" min="0" required>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>地方英譯簡稱</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="local_abbr" name="local_abbr" required>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>區域編號</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="region_id" name="region_id" min="0" required> 
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>省市編號</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="province_id" name="province_id" min="0" required>
+                          </td>
+                        </tr>                        
+                        <tr>
+                          <td width="25%">
+                            <p>地方郵遞號碼</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="local_postal_code" name="local_postal_code" min="0" required>
+                          </td>
+                        </tr>
+                    </tbody>
+                  </table>
+                  <input type="submit" value="確認送出">
+                </form> 
+              </div>
+              <!-- /body table -->
+            </div>
+            <!-- /box -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 省市基本資訊 -->
+      <div class="tab-pane" id="PROVINCE">
+        <div class="row">
+          <div class="col-md-2"></div>
+          <div class="col-md-8">
+            <div class="box">
+            
+              <!-- body table -->
+              <div class="box-body">
+                <form method="post" action="/api/PROVINCE">
+                  <table class="table table-bordered table-hover dataTable">
+                    <tbody>
+                      <tr>
+                        <th width="25%">項目</th>
+                        <th width="75%">資料</th>
+                      </tr>
+                      <tr>
+                        <td width="25%">
+                          <p>省市編號</p>
+                        </td>
+                        <td width="75%">
+                          <input type="number" id="province_id" name="province_id" min="0" required> 
+                        </td>
+                      </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>省市名稱</p>
+                          </td>
+                          <td>
+                            <input type="text" id="province_name" name="province_name" required> 
+                          </td width="75%">
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>省市英譯</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="province_en_name" name="province_en_name" required>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>省市英譯簡稱</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="province_abbr" name="province_abbr" required>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>省市群組代碼</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="province_group_no" name="province_group_no" min="0" required> 
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>省市郵遞號碼</p>
+                          </td>
+                          <td width="75%">
+                            <input type="number" id="province_postal_code" name="province_postal_code" min="0" required>
+                          </td>
+                        </tr>           
+                    </tbody>
+                  </table>
+                  <input type = "submit" value="確認送出">
+                </form> 
+              </div>
+              <!-- /body table -->
+            </div>
+            <!-- /box -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 區域基本資訊 -->
+      <div class="tab-pane" id="REGION">
+        <div class="row">
+          <div class="col-md-2"></div>
+          <div class="col-md-8">
+            <div class="box">
+            
+              <!-- body table -->
+              <div class="box-body">
+                <form method="post" action="/api/REGION">
+                  <table class="table table-bordered table-hover dataTable">
+                    <tbody>
+                      <tr>
+                        <th width="25%">項目</th>
+                        <th width="75%">資料</th>
+                      </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>區域編碼</p>
+                          </td>
+                          <td>
+                            <input type="number" id="region_id" name="region_id" min="0" required> 
+                          </td width="75%">
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>區域名稱</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="region_name" name="region_name" required>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>區域英譯</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="region_en_name" name="region_en_name" required>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td width="25%">
+                            <p>區域英譯簡稱</p>
+                          </td>
+                          <td width="75%">
+                            <input type="text" id="region_abbr" name="region_abbr" required> 
+                          </td>
+                        </tr>
+                        
+                    </tbody>
+                  </table>
+                  <input type = "submit" value="確認送出">
+                </form> 
+              </div>
+              <!-- /body table -->
+            </div>
+            <!-- /box -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+
+
+  </div>
+{% endblock %}
+
+{% block page_script %}
+<!-- CDNJS :: Sortable (https://cdnjs.com/) -->
+<script src="//cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js"></script>
+<!-- CDNJS :: Vue.Draggable (https://cdnjs.com/) -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.15.0/vuedraggable.min.js"></script>
+
+
+{% endblock %}

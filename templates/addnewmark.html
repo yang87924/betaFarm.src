@@ -1,0 +1,83 @@
+{% extends 'base/base.html' %} 
+
+{% block page_title %}新增認證標章{% endblock %}
+
+{% block page_content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-1"></div>
+        <div class="tab-pane col-md-10" id="HARVEST_RECORD" style="background-color:white;">
+            <table id="mark_list_table"></table>
+        </div>
+    </div>
+    <br>
+    <div class="row">
+        <div class="col-md-1"></div>
+        <div class="col-md-10">
+            <form method = "post" action="/api/addnewmark" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="mark_name" class="control-label">名稱</label>
+                    <input type="text" class="form-control" id="mark_name" name="mark_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="abbreviation" class="control-label">英文簡寫</label>
+                    <input type="text" class="form-control" id="abbreviation" name="abbreviation" pattern="[a-zA-Z]{1,}" required>
+                </div>
+                <div class="form-group">
+                    <label for="mark_image" class="control-label">標籤</label>
+                    <input type="file" onchange="preview(this,'mark_preview')" class="form-control" id="mark_image" name="mark_image" accept=".jpg,.jpeg" required>
+                    <img id="mark_preview" style="max-width:400px; height:auto;" src="#"/>
+                </div>
+                <input type = "submit" class="btn btn-success" value="送出">
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_script %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.15.4/bootstrap-table.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.9/dist/js/bootstrap-select.min.js"></script>
+<script>
+function preview(file, selector) {
+    if (file.files && file.files[0]) {
+        var reader = new FileReader();
+
+        reader.onload = function (e) {
+            $("#" + selector).attr('src', e.target.result);
+        }
+
+        reader.readAsDataURL(file.files[0]);
+    }
+}
+$('#mark_list_table').bootstrapTable({
+    url: "/api/addnewmark",
+    pagination: true,
+    search: true,
+    sortable: true,
+    columns: [
+        {
+            sortable: true,
+            field: 'certificate_list_id',
+            title: 'id'
+        },
+        {
+            sortable: true,
+            field: 'mark_name',
+            title: '名稱'
+        },
+        {
+            sortable: true,
+            field: 'abbreviation',
+            title: '英文簡寫'
+        },
+        {
+            sortable: true,
+            field: 'mark_image_addr',
+            class: 'mark_image_addr',
+            title: '標章',
+        }
+    ]
+})
+</script>
+{% endblock %}

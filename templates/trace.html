@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>TIAGA產銷溯源系統</title>
+  <!-- Tell the browser to be responsive to screen width -->
+  <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+  <!-- lang -->
+  {% include 'base/css.html' %}
+  <link rel="stylesheet" href="/static/css/trace.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.12/dist/css/bootstrap-select.min.css">
+  <!-- jQuery 3 -->
+  <script src="/static/jquery/dist/jquery.min.js"></script>
+  <!-- bootstrap -->
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <!-- lang -->
+
+</head>
+
+<body class="hold-transition skin-black-iot sidebar-mini">
+  <div class="wrapper">
+    <header class="main-header">
+      <!-- Logo -->
+      <span class="logo-lg tano-logo"><img src="/static/logo.png" class="tano-logo-img"><b>TIAGA產銷溯源</b></span>
+    </header>
+    <div class="content-wrapper" style="margin-left:0px;">
+      <section class="content">
+        <div class="container">
+          <div class="row">
+            <div class="col-xs-12 col-sm-6 col-sm-offset-3">
+              <div class="crop_image_out">
+                {% if product %}
+                <a href="{{product}}" target="_blank" rel="noopener noreferrer" class="crop_image_container">
+                  <img class="crop_image" src="{{product}}" alt="圖片毀損 請重新上傳">
+                </a>
+                {% else %}
+                <div class="crop_image_container">
+                  <p>目前還沒有上傳圖片</p>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-xs-12 col-sm-6 col-sm-offset-3">
+              <div class="panel_block_top">
+                <div class="card">
+                  <table class="table table-bordered table-sm">
+                    <tbody>
+                      <tr>
+                        <td><b>作物名稱</b></td>
+                        {% if crop_name %}
+                        <td>{{crop_name}}</td>
+                        {% else %}
+                        <td>目前還沒有登記作物名稱</td>
+                        {% endif %}
+                      </tr>
+                      <tr>
+                        <td><b>認證標章<br />(請點擊標章確認證書合格)</b></td>
+                        <td>
+                          {% if certificate %}
+                          {% for mark in certificate %}
+                          <span><a href="{{mark.image_addr}}" target="_blank" rel="noopener noreferrer"><img
+                                src="{{mark.mark_image_addr}}" title="{{mark.mark_name}}"
+                                style='height:50px;width:50px;'></a></span>
+                          {% endfor %}
+                          {% endif %}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><b>農場</b></td>
+                        {% if farm_name %}
+                        <td>{{farm_name}}(<a id="farm_intro_link" target="_blank" rel="noopener noreferrer">點此查看介绍</a>)
+                        </td>
+                        {% else %}
+                        <td>目前還沒有登記農場</td>
+                        {% endif %}
+                      </tr>
+                      <tr>
+                        <td><b>農場地址</b></td>
+                        {% if farm_addr %}
+                        <td>{{farm_addr}}</td>
+                        {% else %}
+                        <td>目前還沒有登記農場</td>
+                        {% endif %}
+                      </tr>
+                      <tr>
+                        <td><b>耕種面積</b></td>
+                        {% if farm_area %}
+                        <td>{{farm_area}}公頃</td>
+                        {% else %}
+                        <td>目前還沒有登記耕種面積</td>
+                        {% endif %}
+                      </tr>
+                      <tr>
+                        <td><b>種苗</b></td>
+                        {% if seedling_name %}
+                        <td>
+                          {% for item in seedling_name %}
+                          <p>{{item.cultivar}} : {{item.name}}</p>
+                          {% endfor %}
+                        </td>
+                        {% else %}
+                        <td>目前還沒有登記種苗</td>
+                        {% endif %}
+                      </tr>
+                      <tr>
+                        <td><b>種苗來源</b></td>
+                        {% if sup_name %}
+                        <td>
+                          {% for item in sup_name %}
+                          <p>{{item}}</p>
+                          {% endfor %}
+                        </td>
+                        {% else %}
+                        <td>目前還沒有登記種苗</td>
+                        {% endif %}
+                      </tr>
+                      <tr>
+                        <td><b>採收後加工產出總數</b></td>
+                        {% if sup_name %}
+                        <td>{{processed_all}}公斤</td>
+                        {% else %}
+                        <td>目前還沒有登記採收後加工產出總數</td>
+                        {% endif %}
+                      </tr>
+                      <tr>
+                        <td><b>檢驗分析報告</b></td>
+                        <td>
+                          <button type="button" onclick="show_report();">
+                            點此查看
+                          </button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><b>產品/賣家連結</b></td>
+                        {% if purchase_link_name %}
+                        <td><a href="#" onclick="purchase_link('{{purchase_link}}');">{{purchase_link_name}}</a></td>
+                        {% else %}
+                        <td>目前還沒有登記產品/賣家連結</td>
+                        {% endif %}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-xs-12 col-sm-6 col-sm-offset-3 panel-container">
+              <div class="panel_block">
+                <div class="card">
+                  <h4 class="card-view-title summary-title">摘要:</h4>
+                  <ul class="list-group list-group-flush summary-group-container">
+                    {% if works_record%}
+                    {% for work in works_record %}
+                    <h5><b>{{work.word_date}}{{work.record_item}}</b></h5>
+                    {% if work.word_memo != ""%}
+                    <li class="list-group-item"><b>工作紀錄: </b>{{work.word_memo}}</li>
+                    {% endif %}
+                    {% if work.image_addr != None and work.image_addr != "" %}
+                    <li class="list-group-item ">
+                      <a href="{{work.image_addr}}" target="_blank" rel="noopener noreferrer"
+                        class="work_image_container">
+                        <img class="work_image" src="{{work.image_addr}}" alt="圖片毀損">
+                      </a>
+                    </li>
+                    {% endif %}
+                    {% if work.memo != ""%}
+                    <li class="list-group-item"><b>備註: </b>{{work.memo}}</li>
+                    {% endif %}
+                    {% endfor %}
+                    {% else %}
+                    <li class="list-group-item">目前還沒有輸入工作紀錄</li>
+                    {% endif %}
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="col-xs-12 col-sm-6 col-sm-offset-3 btn-group-container">
+              <div class="col-xs-12 col-sm-6 btn-gacp-container">
+                <button type="button" class="btn btn-info btn-gacp-search" data-toggle="modal"
+                  data-target="#GACP_record_container">完整GACP種植紀錄</button>
+              </div>
+              <div class="col-xs-12 col-sm-6 btn-gacp-container">
+                <button type="button" class="btn btn-success btn-gacp-search" data-toggle="modal"
+                  data-target="#weather_container">田間傳感器數值</button>
+              </div>
+              <div class="col-xs-12 col-sm-6 btn-gacp-container">
+                <button type="button" class="btn btn-warning btn-gacp-search" data-toggle="modal"
+                  data-target="#pest_record_container">病蟲害防治紀錄</button>
+              </div>
+              {% if have_ipcam %}
+              <div class="col-xs-12 col-sm-6 btn-gacp-container">
+                <button type="button" class="btn btn-primary btn-gacp-search" data-toggle="modal"
+                  data-target="#grow_image_container">觀看成長影像</button>
+              </div>
+              {% endif %}
+              {% if cwb_no and is_taiwan %}
+              <div class="col-xs-12 col-sm-6 btn-gacp-container">
+                <button type="button" class="btn btn-danger btn-gacp-search" data-toggle="modal"
+                  data-target="#cwb_data_container">氣象局資料查詢</button>
+              </div>
+              {% endif %}
+              {% if is_taiwan and session['username'] %}
+              <div class="col-xs-12 col-sm-6 btn-gacp-container">
+                <button type="button" class="btn btn-trend btn-gacp-search" data-toggle="modal"
+                  data-target="#price_trend_container">作物價格趨勢</button>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+
+    <!-- Modals -->
+    <div class="modal fade" id="report_image_container" tabindex="-1" role="dialog"
+      aria-labelledby="report_image_container_title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="report_image_container_title">各項檢驗分析報告</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            {% if reports %}
+            {% for report in reports %}
+            <div>
+              <h5>{{report.up_date}}</h5>
+              <p><b>備註:</b>{% if report.memo %}{{report.memo}}{% endif %}</p>
+              <div onclick="report_swipe_gallery({{loop.index0}})" class="report_image_container">
+                <img class="report_image" src="{{report.up_file}}" title="{{report.memo}}" alt="圖片毀損">
+              </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div>
+              <p>目前還沒有上傳任何檢驗報告</p>
+            </div>
+            {% endif %}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="processed_container" tabindex="-1" role="dialog"
+      aria-labelledby="processed_container_title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="processed_container_title">採收後加工產出總數</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            {% if processed_all %}
+            <div class="card">
+              <ul class="list-group list-group-flush summary-group-container">
+                <li class="list-group-item"><b>總和:{{processed_all}} 公斤</b></li>
+              </ul>
+            </div>
+            {% endif %}
+            {% if processed %}
+            <table class="table table-bordered table-sm" id="table" data-toggle="table" data-toolbar=".toolbar"
+              data-sortable="true">
+              <thead>
+                <th data-sortable="true">分級</th>
+                <th data-sortable="true">貯藏方法</th>
+                <th data-sortable="true">數量</th>
+              </thead>
+              <tbody>
+                {% for record in processed %}
+                <tr>
+                  <td data-sortable="true">{{record.key1}}</td>
+                  <td data-sortable="true">{{record.key2}}</td>
+                  <td data-sortable="true">{{record.value}}公斤</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+            <div>
+              <p>目前還沒有上傳加工產出總數</p>
+            </div>
+            {% endif %}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="weather_container" tabindex="-1" role="dialog" aria-labelledby="weather_title"
+      aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="weather_title">田間傳感器數值</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="form-group row">
+                <div class="col-xs-6">
+                  <label for="start_date">開始時間</label>
+                  <input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control" id="start_date" required>
+                </div>
+                <div class="col-xs-6">
+                  <label for="end_date">結束時間</label>
+                  <input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control" id="end_date" required>
+                </div>
+              </div>
+              <div class="form-group row">
+                <div class="col-xs-6">
+                  <label for="search_target">選項</label>
+                  <select class="form-control" id="search_target" required>
+                    {% if sensors%}
+                    {% for sensor in sensors%}
+                    <option value="{{sensor.df_name}}">{{sensor.alias}}</option>
+                    {% endfor %}
+                    {% endif %}
+                  </select>
+                </div>
+                <div class="col-xs-6">
+                  <label for="data_interval">資料區間</label>
+                  <select class="form-control" id="data_interval" required>
+                    <option value="day" class="" selected>天</option>
+                    <option value="hour" class="">小時</option>
+                  </select>
+                </div>
+              </div>
+              <button type="button" onclick="search_sensor_data()" class="btn btn-primary">查詢</button>
+            </form>
+            <div id="chart_container">
+              <canvas id="field_sensor_chart"></canvas>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="cwb_data_container" tabindex="-1" role="dialog" aria-labelledby="cwb_title"
+      aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="cwb_title">氣象局資料查詢</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="form-group row">
+                <div class="col-xs-12 col-sm-4">
+                  <label for="cwb_interval">時間範圍</label>
+                  <select class="form-control" id="cwb_interval" onchange="cwb_date_range();" required>
+                    <option value="day" selected>天</option>
+                    <option value="month">月</option>
+                  </select>
+                </div>
+                <div class="col-xs-12 col-sm-4">
+                  <label for="cwb_date">時間</label>
+                  <input type="date" class="form-control" id="cwb_date">
+                </div>
+                <div class="col-xs-12 col-sm-4">
+                  <label for="daily_cwb_interval">資料類型</label>
+                  <select class="form-control" id="daily_cwb_interval" onchange="cwb_date_field(this);" required>
+                    <option value="temp" selected>溫度</option>
+                    <option value="humidity">濕度</option>
+                    <option value="wind">風速</option>
+                    <option value="rain">雨量</option>
+                  </select>
+                  <select class="form-control" id="month_cwb_interval" onchange="cwb_date_field(this);" required>
+                    <option value="avg_temp" selected>平均溫度</option>
+                    <option value="high_temp">最高溫度</option>
+                    <option value="low_temp">最低溫度</option>
+                    <option value="humidity">濕度</option>
+                    <option value="wind">風速</option>
+                    <option value="rain">雨量</option>
+                  </select>
+                </div>
+              </div>
+              <button type="button" onclick="search_cwb_data()" class="btn btn-primary">查詢</button>
+            </form>
+            <div id="cwb_chart_container">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="grow_image_container" tabindex="-1" role="dialog" aria-labelledby="grow_image_title"
+      aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="grow_image_title">成長影像</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="form-group">
+                <label for="ipcam_date">選擇查詢日期</label>
+                <input type="date" placeholder="YYYY-MM-DD 如2020-01-01" id="ipcam_date" class="form-control" required>
+              </div>
+              <button type="button" onclick="search_ipcam_data('day')" class="btn btn-primary ipcam_btn">查詢十天內</button>
+              <button type="button" onclick="search_ipcam_data('week')" class="btn btn-primary ipcam_btn">查詢十週內</button>
+              <button type="button" onclick="search_ipcam_data('month')"
+                class="btn btn-primary ipcam_btn">查詢十月內</button>
+              {% if video_flag %}
+              <button type="button" onclick="watch_ipcam_time_lapse()"
+                class="btn btn-success watch_ipcam_time_lapse_btn ipcam_btn">縮時影像</button>
+              {% endif %}
+            </form>
+            <div class="row" id="ipcam_pic_box">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="pest_record_container" tabindex="-1" role="dialog" aria-labelledby="pest_record_title"
+      aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="pest_record_title">防治資材施用</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            {% if pest_records %}
+            {% for record in pest_records %}
+            <div>
+              <h5>{{record.fert_date}}</h5>
+              <div class="card">
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item"><b>防治對象: </b> {{record.control_obj_code}}</li>
+                  {% if record.item_no !="" %}
+                  <li class="list-group-item"><b>施用資材: </b> {{record.item_no}}</li>
+                  {% endif %}
+                  {% if record.application_qty !="" %}
+                  <li class="list-group-item"><b>施用量: </b> {{"{:,.2f}".format(record.application_qty)}} 公斤</li>
+                  {% endif %}
+                  {% if record.dilution_ratio !="" %}
+                  <li class="list-group-item"><b>稀釋倍數: </b> {{"{:,.2f}".format(record.dilution_ratio)}} 倍</li>
+                  {% endif %}
+                  {% if record.preve_method !="" %}
+                  <li class="list-group-item"><b>備註: </b> {{record.preve_method}}</li>
+                  {% endif %}
+                </ul>
+              </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div>
+              <p>目前還沒有上傳任何防治紀錄</p>
+            </div>
+            {% endif %}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GACP modals -->
+    <div class="modal fade" id="GACP_record_container" tabindex="-1" role="dialog" aria-labelledby="GACP_record_title"
+      aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="GACP_record_title">完整GACP種植紀錄</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div>
+              <div>
+                <select id="GACP_record" class="selectpicker" name="crop_no" data-live-search="false">
+                  <option value="seedling">種苗資料</option>
+                  <option value="cultivate">栽培工作紀錄</option>
+                  <option value="fert">肥料施用紀錄</option>
+                  <option value="pest">防治資材施用紀錄</option>
+                  <option value="harvest">採收及採收後處理紀錄</option>
+                  <option value="sale">出貨紀錄</option>
+                  <option value="fert_purchase">肥料資材採購紀錄</option>
+                  <option value="prevention_purchase">防治資材採購紀錄</option>
+                  <option value="other_purchase">其他資材採購紀錄</option>
+                  <option value="analysis">檢驗分析報告</option>
+                  <option value="other">其他記事</option>
+                </select>
+                <button type="button" id="GACP_search_btn" class="btn btn-primary" onclick="GACP_search()">查詢</button>
+              </div>
+              <div class="GACP_table_container">
+                <table id="GACP_table"></table>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="price_trend_container" tabindex="-1" role="dialog" aria-labelledby="price_trend_title"
+      aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="price_trend_title">作物價格趨勢</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            {% if seedling_name %}
+            <div class="row">
+              <div class="col-xs-12 col-sm-6">
+                <label for="price_trend_interval">查詢區間</label>
+                <select id="price_trend_interval" class="selectpicker form-control">
+                  <option value="week">一週內</option>
+                  <option value="month">一月內</option>
+                  <option value="year">一年內</option>
+                </select>
+              </div>
+              <div class="col-xs-12 col-sm-6">
+                <label for="price_trend_cultivar">作物種類</label>
+                <select id="price_trend_cultivar" class="selectpicker form-control">
+                  {% for item in seedling_name | groupby('cultivar') %}
+                  <option value="{{item[0]}}">{{item[0]}}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-xs-12 col-sm-6">
+                <label for="price_trend_market">市場</label>
+                <select id="price_trend_market" class="selectpicker form-control">
+                  {% for market in markets %}
+                  <option value="{{market}}">{{market}}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <button type="button" class="btn btn-primary price_trend_btn" onclick="search_price_trend()">查詢</button>
+            {% else %}
+            <h4 class="text-center">目前還沒有登記種苗</h4>
+            {% endif %}
+            <div id="price_trend_chart_container">
+              <canvas id="price_trend_chart"></canvas>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GACP modals end -->
+    <footer class="main-footer" style="margin-left:0px;">
+      <div class="row">
+        <div class="col-xs-12 col-sm-6">
+          <strong>Copyright &copy; 2020 <a href="https://www.tanosecure.com.tw/" target=“_blank” and rel=“noopener
+              noreferrer”>天龍安全科技</a>.</strong> All rights reserved.
+        </div>
+        <div class="col-xs-12 col-sm-6" style="text-align:right;">
+          version 1.10
+        </div>
+      </div>
+    </footer>
+
+    <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="pswp__bg"></div>
+      <div class="pswp__scroll-wrap">
+        <div class="pswp__container">
+          <div class="pswp__item"></div>
+          <div class="pswp__item"></div>
+          <div class="pswp__item"></div>
+        </div>
+        <div class="pswp__ui pswp__ui--hidden">
+          <div class="pswp__top-bar">
+            <div class="pswp__counter"></div>
+            <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+            <button class="pswp__button pswp__button--share" title="Share"></button>
+            <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+            <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+            <div class="pswp__preloader">
+              <div class="pswp__preloader__icn">
+                <div class="pswp__preloader__cut">
+                  <div class="pswp__preloader__donut"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+            <div class="pswp__share-tooltip"></div>
+          </div>
+          <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+          </button>
+          <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+          </button>
+          <div class="pswp__caption">
+            <div class="pswp__caption__center"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- FastClick -->
+    <script src="/static/fastclick/lib/fastclick.js"></script>
+    <!-- AdminLTE App -->
+    <script src="/static/dist/js/adminlte.min.js"></script>
+    <!-- AdminLTE for demo purposes -->
+    <script src="/static/dist/js/demo.js"></script>
+    <!-- FLOT CHARTS -->
+    <script src="/static/Flot/jquery.flot.js"></script>
+    <!-- FLOT RESIZE PLUGIN - allows the chart to redraw when the window is resized -->
+    <script src="/static/Flot/jquery.flot.resize.js"></script>
+    <!-- FLOT PIE PLUGIN - also used to draw donut charts -->
+    <script src="/static/Flot/jquery.flot.pie.js"></script>
+    <!-- FLOT CATEGORIES PLUGIN - Used to draw bar charts -->
+    <script src="/static/Flot/jquery.flot.categories.js"></script>
+    <!-- FLOT rotate PLUGIN - Used to draw bar charts -->
+    <script src="/static/Flot/jquery.flot.tickrotor.js"></script>
+    <script src="/static/Flot/jquery.flot.symbol.js"></script>
+    <!-- sweetalert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+    <!-- table -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.15.4/bootstrap-table.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+    <!-- bootstrap select-->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.12/dist/js/bootstrap-select.min.js"></script>
+    <!--PhotoSwipe-->
+    <script src="/static/PhotoSwipe/photoswipe.min.js"></script>
+    <script src="/static/PhotoSwipe/photoswipe-ui-default.min.js"></script>
+
+    <script>
+      $('.selectpicker').selectpicker({
+        noneResultsText: '沒有符合的選項'
+      });
+      var cwb_no = {{ cwb_no| tojson}}
+    </script>
+    <!-- trace -->
+    <script src="/static/js/trace.js"></script>
+</body>
+
+</html>

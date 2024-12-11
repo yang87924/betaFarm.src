@@ -1,0 +1,40 @@
+<!-- Left side column. contains the logo and sidebar -->
+<aside class="main-sidebar">
+  <!-- sidebar: style can be found in sidebar.less -->
+  <section class="sidebar">
+    
+    <!-- sidebar menu: : style can be found in sidebar.less -->
+    <ul class="sidebar-menu" data-widget="tree">
+      <li class="header"></li>
+      {% if is_superuser == 0 or is_superuser == 4 or is_superuser == 1 %}
+        <li><a href="/"><i class="fa fa-dashboard"></i> <span>即時資料</span></a></li>
+        <li><a href="/history"><i class="fa fa-book"></i> <span>24小時資料</span></a></li>
+        <li><a href="/compare"><i class="fa fa-signal"></i> <span>資料比對</span></a></li>
+      {% endif %}
+      <!-- 場域管理人 -->
+      {% if is_superuser == 0 or is_superuser == 1 %}
+        <li><a href="/gacp"><i class="fa fa-database"></i> <span>GACP輸入</span></a></li>
+      {% endif %}
+      <!-- 農場負責人 -->
+      {% if is_superuser == 4 or is_superuser == 1 %}
+        <li><a href="/management"><i class="fa fa-cogs"></i> <span>系統管理(農場主)</span></a></li>
+        <li><a href="/gacp_search"><i class="fa fa-search"></i> <span>GACP查詢</span></a></li>
+      {% endif %}
+      <!-- 地方代理商 -->
+      {% if is_superuser == 3 or is_superuser == 1 %}
+        <li><a href="/management_local"><i class="fa fa-cogs"></i> <span>系統管理(地方代理商)</span></a></li>
+      {% endif %}
+      <!-- 區域授權商 -->
+      {% if is_superuser == 2 or is_superuser == 1 %}
+        <li><a href="/management_area"><i class="fa fa-cogs"></i> <span>系統管理(區域授權商)</span></a></li>
+      {% endif %}
+      <!-- 最高管理員 -->
+      {% if is_superuser == 1 %}
+        <li><a href="/management_admin"><i class="fa fa-cogs"></i> <span>系統管理(admin)</span></a></li>
+        <li><a href="/gacp"><i class="fa fa-database"></i> <span>GACP輸入(admin)</span></a></li>
+        <li><a href="/baseInfo"><i class="fa fa-database"></i> <span>基本資訊</span></a></li>
+      {% endif %}
+    </ul>
+  </section>
+  <!-- /.sidebar -->
+</aside>

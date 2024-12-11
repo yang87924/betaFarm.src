@@ -1,0 +1,273 @@
+.skin-black-iot .main-header .navbar{
+    background-color:#007979;
+}
+
+.skin-black-iot .main-header .navbar a span,.skin-black-iot .main-header .navbar > .sidebar-toggle{
+    color:#ffffff;
+}
+
+.skin-black-iot .main-header > .logo{
+    background-color:#007979;
+    color:#ffffff;
+}
+
+.skin-black-iot .main-header > .logo:hover{
+    background-color:#007979;
+    color:black;
+}
+
+.skin-black-iot .main-header .navbar .sidebar-toggle:hover{
+    background-color:#007979;
+    color:black;
+}
+
+.skin-black-iot .main-header .navbar .nav > li > a:hover, .skin-black-iot .main-header .navbar .nav > li > a:active, .skin-black-iot .main-header .navbar .nav > li > a:focus, .skin-black-iot .main-header .navbar .nav .open > a, .skin-black-iot .main-header .navbar .nav .open > a:hover, .skin-black-iot .main-header .navbar .nav .open > a:focus, .skin-black-iot .main-header .navbar .nav > .active > a{
+    background-color:#007979;
+    color:black;
+}
+
+.skin-black-iot .wrapper, .skin-black-iot .main-sidebar, .skin-black-iot .left-side{
+    background-color: #68c39a;
+}
+
+.skin-black-iot .sidebar a{
+    color:#004214;
+    font-weight:bold;
+}
+
+.skin-black-iot .sidebar-menu > li:hover > a, .skin-black-iot .sidebar-menu > li.active > a, .skin-black-iot .sidebar-menu > li.menu-open > a{
+    background-color:#007979;
+    color:#ffffff;    
+}
+
+.content-wrapper{
+    background-color:#d7ebe2;
+}
+
+.login-page, .register-page{
+    background-color:#d7ebe2;
+}
+
+.main-footer{
+    background-color:#007979;
+    color:#ffffff;
+}
+
+.skin-black-iot .main-header .navbar a span:hover{
+    color:black;
+}
+
+p,h1,h2,h3,h4,h5,h6,span,a,option,input,select,textarea,th,tr,td,button,b,div{
+    font-family: 'Noto Sans TC', sans-serif;
+}
+
+.field_data_child,.crop_record_child,.system_management_child{
+    display: none;
+}
+
+.unit_selecter{
+    color:#989898;
+}
+
+.unit_selecter option{
+    color:black;
+}
+
+.btn-organic{
+    margin:5px;
+}
+
+.organic_mode_text{
+    text-align: center;
+    color: #ffffff;
+    background-color: #ff8c8c;
+    border-radius: 3px;
+    padding:7.5px 15px 7.5px 15px;
+    margin:5px;
+}
+
+#organic_mode_text{
+    color:rgba(0, 0, 0, 0.69);
+}
+
+.visible_material_content{
+    background-color: #ffffff;
+    margin:15px;
+    padding:0px;
+}
+
+.visible_material_col{
+    padding:15px;
+}
+
+.visible_material_change_btn_box{
+    text-align: center;
+    margin:15px auto;
+}
+
+.visible_material_manage{
+    margin-bottom:10px;
+    margin-left: -10px;
+}
+
+.gacp_nav_tag{
+    width:30%;
+    margin:0px;
+}
+
+.gacp_nav_tag_link{
+    padding:10px !important;
+}
+
+@media screen and (max-width:425px){
+    .gacp_nav_tag{
+        height:70px;
+    }
+}
+
+@media screen and (min-width:768px){
+    .gacp_nav_tag{
+        width:22%;
+    }
+}
+
+@media screen and (min-width:425px) and (max-width:768px){
+    .gacp_nav_tag{
+        height:60px;
+    }
+}
+
+.gacp_warning{
+    color:red;
+}
+
+.warning_title{
+    text-align: center;
+}
+
+[v-cloak] {
+    /* vue hide element until loading complete*/
+    display: none;
+}
+
+th,td{
+    min-width: 75px;
+    word-wrap:break-word;
+}
+
+.back_to_top{
+    display: none;
+    position: fixed;
+    text-align: center;
+    line-height: 35px;
+    right: 10px;
+    bottom: 10px;
+    width: 40px;
+    height: 40px;
+    border: #012c1160 1px solid;
+    border-radius: 30px 25px / 30px 10px;
+    color:white;
+    background-color: #10947ee7;
+    outline:none;
+    z-index: 1000;
+    transition: .4s;
+}
+
+.visible_material_change_btn {
+    position: fixed;
+    text-align: center;
+    right: 60px;
+    bottom: 10px;
+    outline:none;
+    z-index: 1000;
+    transition: .4s;
+}
+
+.mobile_title{
+    display: inline-block;
+    margin: 0 auto;
+    width: calc(100% - 100px);
+    height:50px;
+    text-align: center;
+}
+
+.mobile_title_login{
+    display: inline-block;
+    margin: 0 auto;
+    padding-left:50px;
+    width: calc(100% - 60px);
+    height:50px;
+    text-align: center;
+}
+
+.mobile_title_logo{
+    margin:5px 5px 15px 5px;
+    max-height:40px;
+    width:auto;
+}
+
+.mobile_title_text{
+    color:white;
+    font-size: 20px;
+    line-height: 50px;
+}
+
+@media screen and (min-width:768px){
+    .mobile_title,.mobile_title_login{
+        display: none;
+    }
+}
+
+.sidebartext {
+    user-select: none;
+}
+
+.table_title {
+    font-size: 20px;
+    font-style: italic;
+    color: #004214;
+    border-bottom: 1px solid #004214;
+}
+
+.not_hover :hover{
+    background-color:#007979;
+    color:white;
+}
+
+.controller_user{
+    margin: 5px 0px;
+}
+
+.controller_user_name{
+    border: gray 1px solid;
+    border-radius: 10%;
+}
+
+#controller_modal {
+    overflow-y: auto; 
+}
+
+.pdf_progress_under {
+    width: 100%;
+    background-color: #989898;
+}
+
+.pdf_progress_bar {
+    top: 0px;
+    height: 25px;
+    width: 0%;
+    background-color: #3dd864;
+}
+
+.pdf_progress_box {
+    height: 25px;
+    margin-bottom: 10px;
+}
+
+#user-access label {
+    word-wrap:break-word;
+}
+
+.panel-heading {
+    word-wrap:break-word;
+}

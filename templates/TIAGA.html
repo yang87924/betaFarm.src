@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+  {% include 'base/head.html' %}
+
+<body class="hold-transition skin-black-iot sidebar-mini">
+
+<div class="wrapper">
+  <header class="main-header">
+    <!-- Logo -->
+    <a href="/" class="logo">
+      <!-- mini logo for sidebar mini 50x50 pixels -->
+      <span class="logo-mini"><img rel="preload" src="/static/logo.png" class="tano-logo-img" as="image"></span>
+      <!-- logo for regular state and mobile devices -->
+      <span class="logo-lg tano-logo"><img rel="preload" src="/static/logo.png" class="tano-logo-img" as="image"><b>智慧神農</b></span>
+    </a>
+    <!-- Header Navbar: style can be found in header.less -->
+    <nav class="navbar navbar-static-top">
+      <div class="mobile_title_login"><img src="/static/logo.png" class="mobile_title_logo"><b class="mobile_title_text">智慧神農</b></div>
+      <div class="navbar-custom-menu">
+        <ul class="nav navbar-nav">
+          <li class="dropdown user user-menu">
+            <a href="/login" class="">登入</a>
+          </li>
+        </ul>
+    </div>
+    </nav>
+  </header>
+	<div class="content-wrapper" style="margin-left:0px;">
+	  <section class="content-header">
+
+{% macro tab_title(field) -%}
+  <li {% if field.is_active %}class="active"{% endif %} id="tab_{{field.name}}">
+    <a href="#{{field.name}}" data-toggle="tab">{{field.alias}}</a>
+  </li>
+{%- endmacro %}
+
+{% macro content_box(fieldname, sensor, value='0') -%}
+  <div class="col-lg-2 col-md-3 col-sm-4 col-xs-6">
+    <!-- small box -->
+    <div class="small-box {{sensor.bg_color}}">
+      <div class="inner">
+        <h3 id="{{fieldname}}_{{sensor.df_name}}" data-toggle="tooltip" title="">{{value}}</h3>
+        <p style="height: 2em">{{sensor.alias}} ({{sensor.unit}})</p>
+      </div>
+      <div class="icon">
+        <i class="fa {{sensor.icon}}"></i>
+      </div>
+      <a href="/history#{{fieldname}},{{sensor.df_name}}" class="small-box-footer"><i class="fa fa-arrow-circle-right"></i>更多資訊</a>
+    </div>
+  </div>
+{%- endmacro %}
+
+{% macro tab_content(field) -%}
+  <div class="tab-pane {% if field.is_active %} active{% endif %}" id="{{field.name}}">
+    <div class="row">
+      {% for sensor in field.sensors %}
+        {{ content_box(field.name, sensor)}}
+      {% endfor %}
+      {% if field.iframe %}
+        <div class="col-xs-12">
+          <iframe src="{{field.iframe}}" width="100%" height="1500px" frameBorder="0"></iframe>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{%- endmacro %}
+
+{# ------------------------------------------------------------------------- #}
+</section>
+	<section class="content">
+{% block page_content %}
+  <div class="nav-tabs-custom">
+    <ul class="nav nav-tabs field_bar">
+      {% for field in fields %}
+        {{ tab_title(field)}}
+      {% endfor %}
+    </ul>
+    <div class="tab-content field_con">
+      {% for field in fields %}
+        {{ tab_content(field) }}
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}
+
+</section>
+	</div>
+<footer class="main-footer" style="margin-left:0px;">
+  <div class="row">
+    <div class="col-xs-12 col-sm-6">
+      <strong>Copyright &copy; 2020 <a href="https://www.tanosecure.com.tw/"  target=“_blank” and rel=“noopener noreferrer”>天龍安全科技</a>.</strong> All rights reserved.
+    </div>
+    <div class="col-xs-12 col-sm-6" style="text-align:right;">
+       version 1.10
+    </div>
+  </div>
+</footer>
+</div>
+{% include 'base/script.html' %}
+{% block page_script %}
+  <!-- Page script -->
+  <script>
+    $(() => {
+      // auto change to tab if given from url hash
+      let hash = window.location.hash.replace('#', '');
+      if($('#tab_' + hash).length){
+        $('#tab_' + hash).find('a').click();
+      }
+      // update monitor date
+      function update() {
+        if (!$('.active').length) {
+          setTimeout(update, 1000);
+          return;
+        }
+        let field = $('.active').attr('id').replace('tab_', '');
+        let ajax_obj = $.ajax({
+          url: '/datas/' + field +'?limit=1',
+          type:'GET'
+        }).done((data) => {
+          let expire_date = new Date();
+          expire_date.setHours(expire_date.getHours() - 2);
+          for(key in data) {
+            if(data[key][0]) {
+              if(new Date(data[key][0][0].replace(/-/g, '/')) < expire_date) {
+                $('#' + field + '_' + key).html('<h3 style="color:red;">' + data[key][0][1] + '</h3>');
+                $('#' + field + '_' + key).attr('data-original-title', 'The last data was taken at ' + data[key][0][0] + '.');
+              } else {
+                $('#' + field + '_' + key).html(data[key][0][1]);
+                $('#' + field + '_' + key).attr('data-original-title', '');
+              }
+            }
+          }
+        }).always(() => {
+          setTimeout(update, 1000);
+        });
+      }
+      update();
+    })
+
+    tab_list=[];
+    pan_list=[];
+    two_list=[];
+
+    function two_change(str1,str2){
+      $(".field_bar .active").removeClass("active");
+      $("#"+str1).addClass("active")
+      $(".field_con .active").removeClass("active");
+      $("#"+str2).addClass("active")
+    }
+    function cycle(two_x){
+      two_change(two_list[two_x][0],two_list[two_x][1]);
+      if(two_x<two_list.length-1){
+        two_x +=1;
+      }else if(two_x>=two_list.length-1){
+        two_x = 0;
+      }
+      setTimeout(function(){
+        cycle(two_x)
+      },5000)
+    }
+
+    $(function(){
+      $(".field_bar li").each(function(){
+        tab_list.push($(this).prop("id"))
+      })
+      $(".field_con .tab-pane").each(function(){
+        pan_list.push($(this).prop("id"))
+      })
+      for(var i=0;i<tab_list.length;i++){
+        two_list.push([tab_list[i],pan_list[i]]);
+      }
+      cycle(0)
+    })
+  </script>
+{% endblock %}
+
+</body>
+</html>

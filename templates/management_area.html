@@ -1,0 +1,510 @@
+{% extends 'base/base.html' %} 
+
+{% block page_title %}系統管理 {% endblock %}
+
+
+{% block page_content %}
+<script type="text/x-template" id="field-local-table-template">
+</script>
+  <!-- TODO: combine MODAL -->
+  <div class="nav-tabs-custom" id="app">
+    <ul class="nav nav-tabs">
+	  <li class="active" id="tab_user">
+        <a href="#user_management" data-toggle="tab" class="">用戶管理</a>
+      </li>
+      <li class="" id="tab_local">
+        <a href="#local_management" data-toggle="tab" class="">地方代理商管理</a>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+	
+	<!-- USER -->
+      <div class="tab-pane active" id="user_management">
+        <div class="row">
+          <div class="col-md-3"></div>
+          <div class="col-md-6">
+            <div class="box">
+              <!-- box-header -->
+              <div class="box-header with-border">
+                <h3 class="box-title">使用者</h3>
+                <div class="box-tools">
+                  <button class="btn btn-success" @click="user_new">新增</button>
+                </div>
+              </div>
+              <!-- /box-header -->
+
+
+              <!-- body table -->
+              <div class="box-body">
+                 <p><b class="">搜尋</b>：<input name="key" type="text" id="key" class="" onkeydown="onSearch(this)" value=""  placeholder="請輸入關鍵字"/></p>
+                <table class="table table-bordered table-hover dataTable" id="store">
+                  <thead>
+                    <tr>
+                      <th>帳號 <i class='fa fa-sort'></i></th>
+                      <th>用戶組 <i class='fa fa-sort'></i></th>
+                    </tr>
+                  <thead>
+                  <tbody>
+                    <template v-for="(user, index) in users">
+                      <tr v-if="user.is_superuser == 2">
+                        <td>
+                          <p style="margin-bottom:0px;">{{ '{{' }}user.username{{ '}}' }}</p>
+                        </td>
+                        <td class="">區域授權商</td>
+                      </tr>
+                      <tr v-if="user.is_superuser == 3">
+                        <td>
+                          <a href="#" @click="user_modify(index)">{{ '{{' }}user.username{{ '}}' }}</a>
+                        </td>
+                        <td class="">地方代理商</td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+              <!-- /body table -->
+            </div>
+            <!-- /box -->
+          </div>
+        </div>
+
+        <!-- Modal -->
+        <div id="user_modal" class="modal fade" role="dialog">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" data-target="#user_modal">&times;</button>
+                <h4 class="modal-title">用戶管理</h4>
+              </div>
+              <!-- form -->
+              <form class="form-horizontal">
+                <div class="modal-body">
+                  <!-- user.id -->
+                  <input type="hidden" class="form-control" id="user-id" v-model="temp_user.id" disabled>
+                  <!-- user.username -->
+                  <div class="form-group">
+                    <label for="user-username" class="col-sm-2 control-label">帳號</label>
+                    <div class="col-sm-10">
+                      <input type="text" class="form-control" id="user-username" v-model="temp_user.username" required>
+                    </div>
+                  </div>
+                  <!-- user.password -->
+                  <div class="form-group" v-if="temp_user.id === ''">
+                    <label for="user-password" class="col-sm-2 control-label">密碼</label>
+                    <div class="col-sm-10">
+                      <input type="password" class="form-control" id="user-password" v-model="temp_user.password" required>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- buttons -->
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-danger" @click="user_delete" v-if="temp_user.id !== ''">刪除</button>
+                  <button type="button" class="btn btn-primary" @click="user_update" v-if="temp_user.id !== ''">修改</button>
+                  <button type="button" class="btn btn-success" @click="user_create" v-if="temp_user.id === ''">確定</button>
+                  <button type="button" class="btn btn-default" data-dismiss="modal" data-target="#user_modal">關閉</button>
+                </div>
+              </form>
+              <!-- /form -->
+            </div>
+
+          </div>
+        </div>
+        <!-- /Modal -->
+      </div>
+      <!-- Local -->
+      <div class="tab-pane" id="local_management">
+        <div class="row">
+          <div class="col-md-2"></div>
+          <div class="col-md-8">
+            <div class="box">
+              <!-- box-header -->
+              <div class="box-header with-border">
+                <h3 class="box-title">地方代理商資訊</h3>
+                <div class="box-tools">
+                  <button class="btn btn-success" @click="local_new">新增</button>
+                </div>
+              </div>
+              <!-- /box-header -->
+
+              <!-- body table -->
+              <div class="box-body" style="overflow-x: auto;">
+                <table class="table table-bordered table-hover dataTable">
+                  <thead>
+                    <tr>
+                      <th>地方代理商 <i class='fa fa-sort'></i></th>
+                      <th>帳號 <i class='fa fa-sort'></i></th>
+                      <th>省市 <i class='fa fa-sort'></i></th>
+                      <th>地方代理商名稱 <i class='fa fa-sort'></i></th>
+                      <th>地方代理商地址 <i class='fa fa-sort'></i></th>
+                      <th>地方代理商電話 <i class='fa fa-sort'></i></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template v-for="(local, index) in locals" v-if="index>1">
+                      <tr>
+                        <td>
+                          <a href="#" @click="local_modify(index)">{{ '{{' }}local.local_agent_id{{ '}}' }}</a>
+                        </td>
+                        <td>{{ '{{' }}local.username{{ '}}' }}</td>
+                        <!--td>{{ '{{' }}locals[0]['province_list'][local.province_id-1]['province_name']{{ '}}' }}</td-->
+                        <td>{{ '{{' }}locals[1]['region_list'][local.local_id]["local_name"]{{ '}}' }}</td>
+                        <td>{{ '{{' }}local.local_agent_name{{ '}}' }}</td>
+                        <td>{{ '{{' }}local.local_agent_addr{{ '}}' }}</td>
+                        <td>{{ '{{' }}local.tel_no{{ '}}' }}</td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+              <!-- /body table -->
+            </div>
+            <!-- /box -->
+          </div>
+        </div>
+
+        <!-- Modal -->
+        <div id="local_modal" class="modal fade" role="dialog">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" data-target="#local_modal">&times;</button>
+                <h4 class="modal-title">地方代理商管理</h4>
+              </div>
+              <!-- form -->
+              <form class="form-horizontal">
+                <div class="modal-body">
+                  <!-- local.id -->
+                  <input type="hidden" class="form-control" id="id" v-model="temp_local.id" disabled>
+                  <!-- user_list -->
+                  <div class="form-group" v-if="temp_local.id === ''">
+                    <label for="local-user" class="col-sm-2 control-label required_s">用戶</label>
+                    <div class="col-sm-10">
+                      <select name="local-user" id="local-user" v-model="temp_local.user_id" required>
+                        <option></option>
+                        <option v-for="(user, index) in users" v-if="user.is_superuser == 3" :value="user.id" >{{ '{{' }}user.username{{ '}}' }}</option>
+                      </select>
+                      <br>
+                      <input type="text" oninput="search_select(this,'local-user')" class="" placeholder="可由此搜尋">
+                    </div>
+                  </div>
+                  <!-- local.id -->
+                  <div class="form-group">
+                    <label for="local-agent-id" class="col-sm-2 control-label required_s">[郵遞區號]地方</label>
+                    <div class="col-sm-10">
+                    <select name="local-id" id="local-id" v-model="temp_local.local_id" required>
+                        <option></option>
+                        <option v-for="local in locals[1]['region_list']" :value="local['local_id']" >[{{ '{{' }}local['local_postal_code']{{ '}}' }}]{{ '{{' }}local['local_name']{{ '}}' }}</option>
+                    </select>
+                      <br>
+                      <input type="text" class="" oninput="search_select(this,'local-id')" placeholder="可由此搜尋">
+                    </div>
+                  </div>
+                  <!-- local.agent.name -->
+                  <div class="form-group">
+                    <label for="local-agent-id" class="col-sm-2 control-label required_s">地方代理商名稱</label>
+                    <div class="col-sm-10">
+                      <input type="text" class="form-control" id="local-agent-name" placeholder="地方代理商名稱" v-model="temp_local.local_agent_name" required>
+                    </div>
+                  </div>
+                  <!-- local.agent.name -->
+                  <div class="form-group">
+                    <label for="local-agent-id" class="col-sm-2 control-label required_s">地方代理商地址</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="local-agent-addr" placeholder="地方代理商聯絡地址" v-model="temp_local.local_agent_addr" required>
+                    </div>                    
+                  </div>
+                  <!-- tel.no -->
+                  <div class="form-group">
+                    <label for="local-agent-id" class="col-sm-2 control-label required_s">地方代理商電話</label>
+                    <div class="col-sm-10" id="tel_box">
+                        <input type="text" class="form-control" id="tel-no" v-model="temp_local.tel_no" placeholder="地方代理商聯絡電話 如:0101234567" onblur=isTel(this.value) required>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- buttons -->
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-info" @click="local_update" v-if="temp_local.id !== ''">修改</button>
+                  <button type="button" class="btn btn-success" @click="local_create" v-if="temp_local.id === ''">確定</button>
+                  <button type="button" class="btn btn-default" data-dismiss="modal" data-target="#local_modal">關閉</button>
+                </div>
+              </form>
+              <!-- /form -->
+            </div>
+
+          </div>
+        </div>
+        <!-- /Modal -->
+      </div>
+      <!-- /LOCAL -->
+{% endblock %}
+
+
+{% block page_script %}
+<!-- CDNJS :: Sortable (https://cdnjs.com/) -->
+<script src="//cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js"></script>
+<!-- CDNJS :: Vue.Draggable (https://cdnjs.com/) -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.15.0/vuedraggable.min.js"></script>
+<script>
+  var app = null;
+
+  $(() => {
+    var fieldLocalTable = {
+      template: '#field-local-table-template',
+      props: {
+        value: Array,
+        remove: Function
+      },
+      name: 'field-local-table',
+      computed: {
+        locals: {
+          get() {
+            return this.value
+          },
+          set(value) {
+            this.$emit('input', value)
+          }
+        }
+      },
+      methods: {
+        field_local_remove(index) {
+          this.remove(index);
+        }
+      }
+    };
+
+    // set Vue data
+    app = new Vue({
+      components:{fieldLocalTable: fieldLocalTable},
+      el: '#app',
+      data: () => {
+        
+        return {
+		  users: [],
+          sensors: [],
+          fields: [],
+          temp_user: {
+            id: '',
+            username: '',
+            password: '',
+            is_superuser: false,
+            access: [],
+            active: null,
+          },
+          locals: [{},{"region_list":{"0": {"local_id": 0, "local_name": "", "local_ne_name": "", "local_abbr": null, "region_id": 0, "province_id": 0, "local_postal_code": 0}}}],
+          temp_local: {
+		        id: '',
+            local_agent_id: '',
+            local_id: '',
+            //province_id: '',
+            local_agent_name: '',
+            local_agent_addr: '',
+            tel_no: '',
+            user_id:''
+          },
+        }
+      },
+      mounted () {
+        // init data
+		this.user_reload();
+        this.local_reload();
+      },
+      methods: {
+	    // -- USER --
+        user_reload() {
+          axios.get('/api/user')
+               .then(response => (this.users = response.data))
+               .catch((error) => {alert("獲得帳號清單失敗");})
+        },
+        user_new() {
+          this.temp_user = {
+            id: '',
+            username: '',
+            password: '',
+            is_superuser: false,
+            access: [],
+            active: null,
+          }
+          $('#user_modal').modal('toggle');
+        },
+        user_create() {
+          // TODO: validate data.
+          axios.post('/api/user', this.temp_user)
+               .then((data, status, request) => {
+                      this.user_reload();
+                      $('#user_modal').modal('toggle');
+               })
+               .catch((error) => {alert("創建失敗，請確認必填處都有填寫，帳號不可與他人重複");});
+        },
+        user_modify(index) {
+          // clone modify data, not alias
+          this.temp_user = JSON.parse(JSON.stringify(this.users[index]));
+          $('#user_modal').modal('toggle');
+        },
+        user_update() {
+          // TODO: validate data.
+          axios.put('/api/user', this.temp_user)
+               .then((data, status, request) => {
+                      this.user_reload();
+                      $('#user_modal').modal('toggle');
+               })
+               .catch((error) => {alert("修改失敗");});
+        },
+        user_delete() {
+          let r = confirm("將一併刪除所有帳號相關資料，確定要刪除?")
+          if (r){
+            axios.delete('/api/user?id=' + this.temp_user.id)
+               .then((data, status, request) => {
+                      this.user_reload();
+                      $('#user_modal').modal('toggle');
+               })
+               .catch((error) => {alert("刪除失敗");});
+          }     
+          location.reload();
+        },
+        // -- LOCAL --
+        local_reload() {
+          axios.get('/api/local/agent/info')
+               .then(response => (this.locals = response.data))
+               .catch((error) => {alert("取得資料失敗");})
+        },
+        local_new() {
+          this.temp_local = {
+		        id: '',
+            local_agent_id: '',
+            local_id: '',
+            //province_id: '',
+            local_agent_name: '',
+            local_agent_addr: '',
+            tel_no: '',
+            user_id:''
+          }
+          $('#local_modal').modal('toggle');
+        },
+        local_create() {
+          // TODO: validate data.
+          axios.post('/api/local/agent/info', this.temp_local)
+               .then((data, status, request) => {
+                      this.local_reload();
+                      $('#local_modal').modal('toggle');
+               })
+               .catch((error) => {alert("創建失敗，請確認資料齊全和正確");});
+        },
+        local_modify(index) {
+          // clone modify data, not alias
+          this.temp_local = JSON.parse(JSON.stringify(this.locals[index]));
+          $('#local_modal').modal('toggle');
+        },
+        local_update() {
+          // TODO: validate data.
+          axios.put('/api/local/agent/info', this.temp_local)
+               .then((data, status, request) => {
+                      this.local_reload();
+                      $('#local_modal').modal('toggle');
+               })
+               .catch((error) => {alert("修改失敗");});
+        },
+        local_delete() {
+          axios.delete('/api/local/agent/info?local_agent_id=' + this.temp_local.local_agent_id)
+               .then((data, status, request) => {
+                      this.local_reload();
+                      $('#local_modal').modal('toggle');
+               })
+               .catch((error) => {alert("刪除失敗");});
+        }
+      }
+    });
+
+  });
+</script>
+<script type="text/javascript">  
+    function onSearch(obj){  
+        setTimeout(function(){ 
+            var storeId = document.getElementById('store');
+            var rowsLength = storeId.rows.length;
+            var key = obj.value;  
+      
+            var searchCol = 0;
+      
+            for(var i=1;i<rowsLength;i++){
+                var searchText = storeId.rows[i].cells[searchCol].textContent;
+				        var searchText2 = storeId.rows[i].cells[1].textContent;
+                if(searchText.match(key) || searchText2.match(key)){  
+                    storeId.rows[i].style.display='';
+                }else{  
+                    storeId.rows[i].style.display='none';
+                }  
+            }  
+        },200);
+    }
+    function isTel(str) {
+    if (str.search(/^\d{7,18}$/) != -1){
+      $("#tel_alert_text").remove();
+      return true;
+    }
+    else{
+      $("#tel_alert_text").remove();
+      $("#tel_box").append('<p id="tel_alert_text" style="color:red;">請輸入有效電話號碼</p>');
+    }
+  }
+
+  $(document).on('click','th',function(){
+    var table = $(this).parents('table').eq(0);
+    var rows = table.find('tr:gt(0)').toArray().sort(comparer($(this).index()));
+    this.asc = !this.asc;
+    if (!this.asc){rows = rows.reverse();}
+    table.children('tbody').empty().html(rows);
+  });
+  function comparer(index) {
+      return function(a, b) {
+          var valA = getCellValue(a, index), valB = getCellValue(b, index);
+          return $.isNumeric(valA) && $.isNumeric(valB) ?
+              valA - valB : valA.localeCompare(valB);
+      };
+  }
+  function getCellValue(row, index){
+      return $(row).children('td').eq(index).text();
+  }
+
+  $(".required_s").prepend("<span style='color:red;'>*</span>");
+
+function search_select(obj,id){
+  var target = obj.value;
+  size_counter = 1;
+  if(target != ""){
+    $("#"+id+" option").prop("selected", false);
+    $("#"+id+" option").each(function(){
+      let item = this.text;
+      if(item.match(target)){
+        size_counter +=1;
+        $(this).show();
+      }else{
+        $(this).hide();
+      }
+    })
+  }else{
+    $("#"+id+" option").each(function(){
+      $(this).show();
+      $("#"+id).attr("size", 1);
+      $(".select_tip_"+id).remove();
+    })
+  }
+  if(size_counter>1){
+    $(".select_tip_"+id).remove();
+    $("#"+id).after("<span class='select_tip_"+id+"'"+" style='color:red;'>請選擇</span>");
+  }
+  $("#"+id).attr("size", size_counter);
+
+  $("#"+id).change(function(){
+    $("#"+id).attr("size", 1);
+    $(".select_tip_"+id).remove();
+    obj.value="";
+    $("#"+id+" option").each(function(){
+      $(this).show();
+    })
+  })
+}
+</script>
+{% endblock %}

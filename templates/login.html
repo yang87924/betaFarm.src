@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+{% include 'base/head.html' %}
+<body class="hold-transition login-page">
+<div class="login-box">
+  <div class="login-logo"><b>智慧神農</b></div>
+
+  <div class="login-box-body" style="border-radius: 20px;">
+    <h4 class="login-box-msg">登入</h4>
+
+    <form method="post">
+      <div class="form-group has-feedback">
+        <input name="username" type="username" class="form-control" placeholder="帳號" style="border-radius: 17px;">
+        <span class="glyphicon glyphicon-user form-control-feedback"></span>
+      </div>
+      <div class="form-group has-feedback">
+        <input name="password" type="password" class="form-control" placeholder="密碼" style="border-radius: 17px;">
+        <span class="glyphicon glyphicon-lock form-control-feedback"></span>
+      </div>
+      <div class="row">
+        {% if msg %}
+        <div class="col-xs-12"><span style="color:red" class="">帳號或密碼錯誤</span></div>
+        {% endif %}
+          <button type="submit" class="btn btn-primary btn-block btn-flat" style="border-radius: 17px;">登入</button>
+        </div>
+      </div>
+    </form>
+
+  </div>
+  <!-- /.login-box-body -->
+</div>
+<!-- /.login-box -->
+
+<!-- jQuery 3 -->
+<script src="/static/jquery/dist/jquery.min.js"></script>
+<!-- Bootstrap 3.3.7 -->
+<script src="/static/bootstrap/dist/js/bootstrap.min.js"></script>
+<!-- iCheck -->
+
+</body>
+</html>

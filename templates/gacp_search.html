@@ -1,0 +1,2717 @@
+{% extends 'base/base.html' %} 
+
+{% block page_title %}農務工作紀錄(GACP)查詢{% endblock %}
+
+{% block page_content %}
+	<!-- 农场编号 -->
+	<div class="col-sm-4 col-xs-12"  style="margin-top:5px;">
+		<label for="farm_id"  style="font-size:1em;" class="">農場編號:</label>
+		<select class="form-control" id="farm_id" onchange="gacp_no_filter();field_id_filter();">
+			<option class="first_be_hided"></option>
+			{% for id in farm_id %}
+				<option value="{{id[0]}}">[{{id[0]}}]{{id[1]}}</option>
+			{% endfor%}
+		</select>
+	</div>
+
+	<!-- 场域编号 -->
+	<div class="col-sm-4 col-xs-12"  style="margin-top:5px;">
+		<label for="field_id" style="font-size:1em;" class="">場域編號:</label>
+		<select class="form-control" id="field_id" onchange="gacp_no_filter();">
+			<option></option>
+			{% for id in field_id %}
+				<option value="{{id[0]}}" data-farm="{{id[2]}}">[{{id[0]}}]{{id[3]}}</option>
+			{% endfor%}
+		</select>
+	</div>
+
+	<!-- GACP编号 -->
+	<div class="col-sm-4 col-xs-12"   style="margin-top:5px;margin-bottom:5px;">
+		<label for="gacp_no" style="font-size:1em;" class="">GACP編號:</label>
+		<select class="form-control" id="gacp_no">
+			<option></option>
+			{% for id in gacp_no %}
+				<option value="{{id[0]}}">{{id[0]}}</option>
+			{% endfor%}
+		</select>
+	</div>
+	<!-- 查询 -->
+	<div class="col-xs-12">
+		<input type="button" onclick="gacp_search()" class="btn btn-primary" value="查詢" style="margin-bottom:10px;" />
+		{% if session['is_superuser'] != 0 %}
+		<input type="button" onclick="gacp_pdf()" class="btn btn-primary" value="下載為pdf" style="margin-bottom:10px;" />
+		{% endif %}
+	</div>
+	<div class="col-xs-12">
+		<p>溯源連結:<a class="trace_link" target="_blank" rel="noopener noreferrer"></a></p>
+	</div>
+	<script type="text/x-template" id="field-sensor-table-template">
+	<table class="table table-bordered table-hover dataTable">
+	</table>
+
+	</script>
+	<!-- TODO: combine MODAL -->
+	<div class="nav-tabs-custom" id="app" >
+		<ul class="nav nav-tabs">
+			<li class="gacp_nav_tag" id="tab_SEED_REGIS_FORM">
+				<a href="#SEED_REGIS_FORM" data-toggle="tab" class="gacp_nav_tag_link">種苗登記表</a>
+			</li>
+			<li class="gacp_nav_tag" id="tab_CULT_WORK_RECORD">
+				<a href="#CULT_WORK_RECORD" data-toggle="tab" class="gacp_nav_tag_link">栽培工作紀錄</a>
+			</li>
+			<li class="gacp_nav_tag" id="tab_FERT_CONS_RECORD">
+				<a href="#FERT_CONS_RECORD" data-toggle="tab" class="gacp_nav_tag_link">肥料施用紀錄</a>
+			</li>
+			<li class="gacp_nav_tag" id="tab_PESTS_DISEASES_RECORD">
+				<a href="#PESTS_DISEASES_RECORD" data-toggle="tab" class="gacp_nav_tag_link">防治資材施用紀錄</a>
+			</li>
+			<li class="gacp_nav_tag" id="tab_HARVEST_RECORD">
+				<a href="#HARVEST_RECORD" data-toggle="tab" class="gacp_nav_tag_link">採收/採收後處理紀錄</a>
+			</li>
+			<li class="gacp_nav_tag" id="tab_SHIPPMENT_RECORD">
+				<a href="#SHIPPMENT_RECORD" data-toggle="tab" class="gacp_nav_tag_link">出貨紀錄</a>
+			</li>
+			<li class="gacp_nav_tag" id="tab_SALES_INFO">
+				<a href="#SALES_INFO" data-toggle="tab" class="gacp_nav_tag_link">銷售對象聯絡資料</a>
+			</li>
+			<li class="gacp_nav_tag" id="tab_FERT_PURCH_RECORD">
+				<a href="#FERT_PURCH_RECORD" data-toggle="tab" class="gacp_nav_tag_link">肥料資材採購紀錄表</a>
+			</li>
+			<li class="gacp_nav_tag" id="tab_PREVE_PURCH_RECORD">
+				<a href="#PREVE_PURCH_RECORD" data-toggle="tab" class="gacp_nav_tag_link">防治資材採購紀錄表</a>
+			</li>
+			<li class="gacp_nav_tag" id="tab_OTHER_PURCH_RECORD">
+				<a href="#OTHER_PURCH_RECORD" data-toggle="tab" class="gacp_nav_tag_link">其他資材採購紀錄表</a>
+			</li>
+			<li class="gacp_nav_tag" id="tab_OTHER_INSPECTION_INFO">
+				<a href="#OTHER_INSPECTION_INFO" data-toggle="tab" class="gacp_nav_tag_link">各種檢驗分析表照片</a>
+			</li>
+			<li class="gacp_nav_tag" id="tab_CERTIFICATE_MRAK">
+				<a href="#CERTIFICATE_MRAK" data-toggle="tab" class="gacp_nav_tag_link">各項認證標章</a>
+			</li>
+			<li class="gacp_nav_tag" id="tab_OTHER_NOTES">
+				<a href="#OTHER_NOTES" data-toggle="tab" class="gacp_nav_tag_link">其他記事</a>
+			</li>
+		</ul>
+
+		<div class="tab-content">
+			<!-- 种苗登记表 -->
+			<div class="tab-pane fade" id="SEED_REGIS_FORM">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="box">
+							<!-- body table -->
+							<div class="box-body" style="overflow-x:auto;">
+									<table class="table table-bordered table-hover dataTable">
+										<thead>
+											<tr>
+												<th>栽培作物 <i class='fa fa-sort'></i></th>
+												<th>品種 <i class='fa fa-sort'></i></th>
+												<th>數量 <i class='fa fa-sort'></i></th>
+												<th>單位 <i class='fa fa-sort'></i></th>
+												<th>自培留種 <i class='fa fa-sort'></i></th>
+												<th>種苗來源 <i class='fa fa-sort'></i></th>
+												<th>購入日期 <i class='fa fa-sort'></i></th>
+												<th></th>
+											</tr>
+										</thead>
+										<tbody id="seed_regis_tbody">
+										</tbody>
+									</table>
+							</div>
+							<!-- /body table -->
+						</div>
+						<!-- /box -->
+					</div>
+				</div>
+			</div>
+			<!-- /种苗登记表 -->
+
+			<!-- 栽培工作记录 -->
+			<div class="tab-pane fade" id="CULT_WORK_RECORD">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="box">
+							<!-- body table -->
+							<div class="box-body" style="overflow-x:auto;">
+								<table class="table table-bordered table-hover dataTable">
+										<thead>
+											<tr>
+												<th>作業內容 <i class='fa fa-sort'></i></th>
+												<th>作業日期 <i class='fa fa-sort'></i></th>
+												<th>上傳檔案 <i class='fa fa-sort'></i></th>
+												<th>備註 <i class='fa fa-sort'></i></th>
+												<th></th>
+											</tr>
+										</thead>
+										<tbody id="cult_work_tbody">
+										</tbody>
+								</table>
+							</div>
+							<!-- /body table -->
+						</div>
+						<!-- /box -->
+					</div>
+				</div>
+			</div>
+			<!-- /栽培工作记录 -->
+
+			<!-- 肥料施工记录 -->
+			<div class="tab-pane fade" id="FERT_CONS_RECORD">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="box">
+							<!-- body table -->
+							<div class="box-body" style="overflow-x:auto;">
+								<table class="table table-bordered table-hover dataTable">
+									<thead>
+										<tr>
+											<th>施肥別 <i class='fa fa-sort'></i></th>
+											<th>施用日期 <i class='fa fa-sort'></i></th>
+											<th>施用資材 <i class='fa fa-sort'></i></th>
+											<th>施用量 <i class='fa fa-sort'></i></th>
+											<th>單位 <i class='fa fa-sort'></i></th>
+											<th>備註 <i class='fa fa-sort'></i></th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="fert_cons_tbody">
+									</tbody>
+								</table>
+							</div>
+							<!-- /body table -->
+						</div>
+						<!-- /box -->
+					</div>
+				</div>
+			</div>
+			<!-- /肥料施工记录 -->
+
+			<!-- 病虫草害等防治施用记录 -->
+			<div class="tab-pane fade" id="PESTS_DISEASES_RECORD">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="box">
+							<!-- body table -->
+							<div class="box-body" style="overflow-x:auto;">
+								<table class="table table-bordered table-hover dataTable">
+									<thead>
+										<tr>
+											<th>防治對象</th>
+											<th>施用日期</th>
+											<th>施用資材</th>
+											<th>施用量</th>
+											<th>單位</th>
+											<th>稀釋倍數</th>
+											<th>防治方式</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="pests_dise_tbody">
+									</tbody>
+								</table>
+							</div>
+							<!-- /body table -->
+						</div>
+						<!-- /box -->
+					</div>
+				</div>
+			</div>
+			<!-- /病虫草害等防治施用记录 -->
+			
+			<!-- 採收记录 -->
+			<div class="tab-pane fade" id="HARVEST_RECORD">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="box">
+							<!-- body table -->
+							<div class="box-body" style="overflow-x:auto;">
+								<table class="table table-bordered table-hover dataTable">
+									<thead>
+										<tr>
+											<th>作業日期</th>
+											<th>採收量</th>
+											<th>單位</th>
+											<th>分級</th>
+											<th>貯藏方式</th>
+											<th>作業內容</th>
+											<th>備註</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="harvest_tbody">
+									</tbody>
+								</table>
+							</div>
+							<!-- /body table -->
+						</div>
+						<!-- /box -->
+					</div>
+				</div>
+			</div>
+			<!-- /採收记录 -->
+
+			<!-- 出货记录 -->
+			<div class="tab-pane fade" id="SHIPPMENT_RECORD">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="box">
+							<!-- body table -->
+							<div class="box-body" style="overflow-x:auto;">
+								<table class="table table-bordered table-hover dataTable">
+									<thead>
+										<tr>
+											<th>出貨日期</th>
+											<th>採收日期</th>
+											<th>銷售對象</th>
+											<th>出貨量</th>
+											<th>出貨量單位</th>
+											<th>包裝重量</th>
+											<th>包裝重量單位</th>
+											<th>銷售總額</th>
+											<th>標章流水編號起迄</th>
+											<th>產品等級</th>
+											<th>備註</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="shippment_tbody">
+									</tbody>
+								</table>
+							</div>
+							<!-- /body table -->
+						</div>
+						<!-- /box -->
+					</div>
+				</div>
+			</div>
+			<!-- /出货记录 -->
+
+			<!-- 销售对象联络资料 -->
+			<div class="tab-pane fade" id="SALES_INFO">
+				<div class="row">
+					
+					<div class="col-md-12">
+						<div class="box">
+							<!-- body table -->
+							<div class="box-body" style="overflow-x:auto;">
+								<table class="table table-bordered table-hover dataTable">
+									<thead>
+										<tr>
+											<th>名稱</th>
+											<th>電話</th>
+											<th>住址</th>
+											<th>e-mail</th>
+											<th>Line</th>
+											<th>備註</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="sales_info_tbody">
+									</tbody>
+								</table>
+							</div>
+							<!-- /body table -->
+						</div>
+						<!-- /box -->
+					</div>
+				</div>
+			</div>
+			<!-- /销售对象联络资料 -->
+
+			<!-- 肥料资材採购记录表 -->
+			<div class="tab-pane fade" id="FERT_PURCH_RECORD">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="box">
+							<!-- body table -->
+							<div class="box-body" style="overflow-x:auto;">
+								<table class="table table-bordered table-hover dataTable">
+									<thead>
+										<tr>
+											<th>採購日期</th>
+											<th>資材(廠牌)</th>
+											<th>廠商(製造商/代理商)</th>
+											<th>批號</th>
+											<th>價格(每單位)</th>
+											<th>數量</th>
+											<th>單位</th>
+											<th>總價</th>
+											<th>採購單據</th>
+											<th>備註</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="fert_purch_tbody">
+									</tbody>
+								</table>
+							</div>
+							<!-- /body table -->
+						</div>
+						<!-- /box -->
+					</div>
+				</div>
+			</div>
+			<!-- /肥料资材採购记录表 -->
+
+			<!-- 防治资材採购记录表 -->
+			<div class="tab-pane fade" id="PREVE_PURCH_RECORD">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="box">
+							<!-- body table -->
+							<div class="box-body" style="overflow-x:auto;">
+								<table class="table table-bordered table-hover dataTable">
+									<thead>
+										<tr>
+											<th>採購日期</th>
+											<th>資材(廠牌)</th>
+											<th>廠商(製造商/代理商)</th>
+											<th>批號</th>
+											<th>價格(每單位)</th>
+											<th>數量</th>
+											<th>單位</th>
+											<th>總價</th>
+											<th>採購單據</th>
+											<th>備註</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="preve_purch_tbody">
+									</tbody>
+								</table>
+							</div>
+							<!-- /body table -->
+						</div>
+						<!-- /box -->
+					</div>
+				</div>
+			</div>
+			<!-- /防治资材採购记录表 -->
+
+			<!-- 其他资材採购记录表 -->
+			<div class="tab-pane fade" id="OTHER_PURCH_RECORD">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="box">
+							<!-- body table -->
+							<div class="box-body" style="overflow-x:auto;">
+								<table class="table table-bordered table-hover dataTable">
+									<thead>
+										<tr>
+											<th>採購日期</th>
+											<th>資材(廠牌)</th>
+											<th>廠商(製造商/代理商)</th>
+											<th>批號</th>
+											<th>價格(每單位)</th>
+											<th>數量</th>
+											<th>單位</th>
+											<th>總價</th>
+											<th>採購單據</th>
+											<th>備註</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="other_purch_tbody">
+									</tbody>
+								</table>
+							</div>
+							<!-- /body table -->
+						</div>
+						<!-- /box -->
+					</div>
+				</div>
+			</div>
+			<!-- /其他资材採购记录表 -->
+			<!-- 各种检验分析表黏贴处 -->
+			<div class="tab-pane fade" id="OTHER_INSPECTION_INFO">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="box">
+							<!-- body table -->
+							<div class="box-body" style="overflow-x:auto;">
+								<table class="table table-bordered table-hover dataTable">
+									<thead>
+										<tr>
+											<th>日期</th>
+											<th>上傳檔案</th>
+											<th>備註</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="other_inspection_upld_tbody">
+									</tbody>
+								</table>
+							</div>
+							<!-- /body table -->
+						</div>
+						<!-- /box -->
+					</div>
+				</div>
+			</div>
+			<!-- /各种检验分析表黏贴处 -->
+
+			<!-- 各項認證標章 -->
+			<div class="tab-pane fade" id="CERTIFICATE_MRAK">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="box">
+							<!-- body table -->
+							<div class="box-body" style="overflow-x:auto;">
+								<table class="table table-bordered table-hover dataTable">
+									<thead>
+										<tr>
+											<th>認證標章</th>
+											<th>認證標章名稱</th>
+											<th>英文簡寫</th>
+											<th>認證證書照片</th>
+											<th>有效日期</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="certificate_mark_tbody">
+									</tbody>
+								</table>
+							</div>
+							<!-- /body table -->
+						</div>
+						<!-- /box -->
+					</div>
+				</div>
+			</div>
+			<!-- /各項認證標章 -->
+
+			<!-- 其他记事 -->
+			<div class="tab-pane fade" id="OTHER_NOTES">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="box">
+							<!-- body table -->
+							<div class="box-body" style="overflow-x:auto;">
+								<table class="table table-bordered table-hover dataTable">
+									<thead>
+										<tr>
+											<th>日期</th>
+											<th>內容</th>
+											<th>紀錄人員</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="other_notes_tbody">
+									</tbody>
+								</table>
+							</div>
+							<!-- /body table -->
+						</div>
+						<!-- /box -->
+					</div>
+				</div>
+			</div>
+			<!-- /其他记事 -->
+		</div>
+	</div>
+	<!----------------------------------------------------------------------------------------------------------------------------------------------->
+	<!----------------------------------------------------------------------------------------------------------------------------------------------->
+	<!----------------------------------------------------------------------------------------------------------------------------------------------->
+	<!-- Modals -->
+	<div class="modal fade" id="seed_regis_modal" role="dialog" aria-labelledby="seed_regis_modal_title" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="seed_regis_modal_title" class="">種苗登記表修改</h4>
+				</div>
+				<div class="modal-body">
+					<form id="seed_regis_update_form" enctype="multipart/form-data">
+						<div class="form-group" style="display:none;">
+							<p class="seed_regis_input"></p>
+						</div>
+						<div class="form-group">
+							<label for="item_no1" class="required_s">栽培品種</label>
+							<select id="item_no1" name="item_no" class="selectpicker form-control seed_regis_input" data-live-search="true" required>
+								{% for item in cult_items %}
+									<optgroup label="{{item['name']}}">
+									{% for crop in item['crop'] %}
+										<option value="{{crop.item_no}}">{{crop.item_name}}</option>
+									{% endfor %}
+									</optgroup>
+								{% endfor%}
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="seed_qty" class="required_s">數量</label>
+							<input type="text" class="form-control seed_regis_input" id="seed_qty" name="seed_qty" min="0" step="0.1" placeholder="" required>
+						</div>
+						<div class="form-group">
+							<label for="seed_qty_unit" class="required_s">單位</label>
+							<select id="seed_qty_unit" name="seed_qty_unit" class="selectpicker form-control seed_regis_input" required>
+							<option></option>
+								{% for unit in seed_units %}
+									<option value="{{unit.unit_id}}">{{unit.name}}</option>
+								{% endfor%}
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="self_reserved" class="control-label required_s gacp-text">是否為自培留種</label>
+							<select title="是否為自培留種" name="self_reserved" id="self_reserved" class="selectpicker form-control seed_regis_input" onchange="selfReserved(this);" required>
+								<option value="1">是</option>
+								<option value="0">否</option>
+							</select>
+						</div>
+						<div class="form-group seed_hide_box">
+							<label for="sup_id4" class="required_s control-label">種子(苗)來源</label>
+							<select title="請選擇供應商(您跟誰買的)" id="sup_id4" name="sup_id" class="selectpicker form-control seed_regis_input" required>
+								{% for sup in user_sup %}
+									<option value="{{sup.sup_id}}">{{sup.sup_name}}</option>
+								{% endfor %}
+							</select>
+						</div>
+						<div class="form-group seed_hide_box">
+							<label for="purch_date1" class="required_s">購入日期</label>
+							<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control seed_regis_input" id="purch_date1" name="purch_date" required>
+						</div>
+						<div class="form-group">
+							<input id="regis_id" class="seed_regis_input" type="hidden" name="regis_id">
+						</div>
+						<button type="button"  onclick="gacp_update('/api/SEED_REGIS_FORM','seed_regis');" class="btn btn-primary">確認修改</button>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="cult_work_modal" role="dialog" aria-labelledby="cult_work_modal_title" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="cult_work_modal_title">栽培工作紀錄修改</h4>
+				</div>
+				<div class="modal-body">
+					<form id="cult_work_update_form" enctype="multipart/form-data">
+						<div class="form-group">
+							<label for="record_item" class="required_s">紀錄項目</label>
+							<select class="selectpicker cult_work_input form-control" id="record_item" data-live-search="true" name="record_item">
+								{% for work in cult_work_list %}
+									<option value="{{work.cult_work_code}}">{{work.cult_work_tw_name}}</option>
+								{% endfor%}
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="word_date1" class="required_s">作業日期</label>
+							<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control cult_work_input" id="word_date1" name="word_date" required>
+						</div>
+						<div class="form-group">
+							<p><b class="">點擊圖片重新上傳檔案</b></p>
+							<label for="up_file1"><img id="cult_work_preview" class="cult_work_input" style="width:400px; height:auto;" src="#"/>上傳檔案</label>
+							<input type="file" capture="camera" onchange="preview(this,'cult_work_preview')" class="form-control" id="up_file1" name="up_file" accept=".jpg,.jpeg" style="display:none;" required>
+						</div>
+						<div class="form-group">
+							<label for="memo1" class="">備註</label>
+							<textarea name="memo" id="memo1" class="form-control cult_work_input" placeholder="" maxlength="200" ></textarea>
+						</div>
+						<div class="form-group">
+							<input id="cult_work_id" class="cult_work_input" type="hidden" name="record_id">
+						</div>
+						<button type="button" onclick="gacp_update('/api/CULT_WORK_RECORD','cult_work','cult_work_preview');" class="btn btn-primary">確認修改</button>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="fert_cons_modal" role="dialog" aria-labelledby="fert_cons_modal_title" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="fert_cons_modal_title">肥料施用紀錄修改</h4>
+				</div>
+				<div class="modal-body">
+					<form id="fert_cons_update_form" enctype="multipart/form-data">
+						<div class="form-group">
+							<label for="fert_code" class="required_s">施肥別</label>
+							<p class="fert_cons_record_item"></p>
+							<select class="fert_cons_input"  name="fert_code" style="display:none" readonly>
+								{% for work in fert_cons_list %}
+									<option value="{{work.fert_cons_code}}">{{work.fert_cons_name}}</option>
+								{% endfor %}
+							</select>
+						</div>
+						<div class="form-group">
+								<label for="fert_date1" class="required_s">施用日期</label>
+								<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control fert_cons_input" id="fert_date1" name="fert_date" required>
+						</div>
+						<div class="form-group">
+							<label for="item_no2" class="required_s">施用資材</label>
+							<select class="selectpicker form-control fert_cons_input" id="item_no2" name="item_no" data-live-search="true">
+								{% for material in fert_materials_purchased %}
+									<option value="{{material.record_id}}">{{material.item_name}}(批號:{{material.lot_number}})</option>
+								{% endfor%}
+							</select>
+						</div>
+						 <div class="form-group">
+							<label for="application_qty1" class="required_s">施用量</label>
+							<input type="number" class="form-control fert_cons_input" id="application_qty1" name="application_qty" min="0" step="0.01" placeholder="" required>
+						</div>
+						<div class="form-group">
+							<label for="qty_unit" class="required_s">單位</label>
+							<select id="qty_unit" name="qty_unit" class="selectpicker form-control fert_cons_input" data-live-search="true" required>
+							<option></option>
+								{% for unit in material_units %}
+									<option value="{{unit.unit_id}}">{{unit.name}}</option>
+								{% endfor %}
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="memo2">備註</label>
+							<textarea name="memo" id="memo2" class="form-control fert_cons_input" placeholder="" maxlength="200" ></textarea>
+						</div>
+						<div class="form-group">
+							<input id="fert_cons_id" class="fert_cons_input" type="hidden" name="record_id">
+						</div>
+						<button type="button" onclick="gacp_update('/api/FERT_CONS_RECORD','fert_cons');" class="btn btn-primary">確認修改</button>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="pests_dise_modal" role="dialog" aria-labelledby="pests_dise_modal_title" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="pests_dise_modal_title">防治資材施用紀錄修改</h4>
+				</div>
+				<div class="modal-body">
+					<form id="pests_dise_update_form" enctype="multipart/form-data">
+						<div class="form-group">
+							<label for="control_obj_code" class="required_s">防治對象</label>
+							<select class="selectpicker form-control pests_dise_input" id="control_obj_code" name="control_obj_code" data-live-search="true">
+								{% for control_obj in control_obj_list %}
+									<option value="{{control_obj.control_obj_code}}">{{control_obj.control_obj_name}}</option>
+								{% endfor%}
+							</select>
+						</div>
+						<div class="form-group">
+								<label for="fert_date2" class="required_s">施用日期</label>
+								<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control pests_dise_input" id="fert_date2" name="fert_date" required>
+						</div>
+						<div class="form-group">
+							<label for="item_no3" class="required_s">施用資材</label>
+							<select class="selectpicker form-control pests_dise_input" id="item_no3" name="item_no" data-live-search="true">
+								{% for material in prev_materials_purchased %}
+									<option value="{{material.record_id}}">{{material.item_name}}(批號:{{material.lot_number}})</option>
+								{% endfor%}
+							</select>
+						</div>
+						 <div class="form-group">
+							<label for="application_qty2" class="required_s">施用量</label>
+							<input type="number" class="form-control pests_dise_input" id="application_qty2" name="application_qty" min="0" step="0.01" placeholder="" required>
+						</div>
+						<div class="form-group">
+							<label for="qty_unit4" class="required_s">單位</label>
+							<select id="qty_unit4" name="qty_unit" class="selectpicker form-control pests_dise_input" data-live-search="true" required>
+								{% for unit in material_units %}
+									<option value="{{unit.unit_id}}">{{unit.name}}</option>
+								{% endfor %}
+							</select>
+						</div>
+						 <div class="form-group">
+							<label for="dilution_ratio" class="">稀釋倍數</label>
+							<input type="number" class="form-control pests_dise_input" id="dilution_ratio" name="dilution_ratio" min="0" step="0.01" placeholder="" required>
+						</div>
+						<div class="form-group">
+							<label for="preve_method" class="">防治方式</label>
+							<textarea name="preve_method" id="preve_method" class="form-control pests_dise_input" placeholder="" maxlength="200" ></textarea>
+						</div>
+						<div class="form-group">
+							<input type="hidden" class="id_no pests_dise_input" name="pd_no">
+						</div>
+						<button type="button" onclick="gacp_update('/api/PESTS_DISEASES_RECORD','pests_dise');" class="btn btn-primary">確認修改</button>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="harvest_modal" role="dialog" aria-labelledby="harvest_modal_title" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="harvest_modal_title">採收紀錄修改</h4>
+				</div>
+				<div class="modal-body">
+					<form id="harvest_update_form" enctype="multipart/form-data">
+						<div class="form-group">
+							<label for="word_date2" class="required_s">作業日期</label>
+							<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control harvest_input" id="word_date2" name="word_date" required>
+						</div>
+						 <div class="form-group">
+							<label for="harvest_qty" class="required_s">採收量</label>
+							<input type="number" class="form-control harvest_input" id="harvest_qty" name="harvest_qty" min="0" step="0.01" placeholder="" required>
+						</div>
+						<div class="form-group">
+							<label for="qty_unit6" class="control-label required_s">單位</label>
+							<select title="請選擇單位" id="qty_unit6" name="qty_unit" class="harvest_input selectpicker form-control" onchange="unit_selected(this);" required>
+								{% for unit in weight_units %}
+									<option value="{{unit.unit_id}}">{{unit.name}}</option>
+								{% endfor %}
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="grading_code" class="required_s">分級</label>
+							<p class="harvest_record_item"></p>
+							<select class="harvest_input" id="grading_code" name="grading_code" style="display:none;" data-live-search="true">
+								{% for granding in granding_list %}
+									<option value="{{granding.grading_code}}">{{granding.grading_code_name}}</option>
+								{% endfor%}
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="storage_code" class="required_s">貯藏方式</label>
+							<p class="harvest_record_item"></p>
+							<select class="harvest_input" id="storage_code" name="storage_code" style="display:none;" data-live-search="true">
+								{% for storage in storage_list %}
+									<option value="{{storage.storage_code}}">{{storage.storage_code_name}}</option>
+								{% endfor%}
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="word_memo2" class="">作業內容</label>
+							<textarea name="word_memo" id="word_memo2" class="form-control harvest_input" placeholder="" maxlength="200" ></textarea>
+						</div>
+						<div class="form-group">
+							<label for="memo3" class="">備註</label>
+							<textarea name="memo" id="memo3" class="form-control harvest_input" placeholder="" maxlength="200" ></textarea>
+						</div>
+						 <div class="form-group">
+							<input id="harvest_record_id" class="harvest_input" type="hidden" name="record_id">
+						</div>
+						<button type="button" onclick="gacp_update('/api/HARVEST_RECORD','harvest');" class="btn btn-primary">確認修改</button>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="shippment_modal" role="dialog" aria-labelledby="shippment_modal_title" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="shippment_modal_title">出貨紀錄修改</h4>
+				</div>
+				<div class="modal-body">
+					<form id="shippment_update_form" enctype="multipart/form-data">
+						<div class="form-group">
+							<label for="sales_date" class="required_s">出貨日期</label>
+							<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control shippment_input" id="sales_date" name="sales_date" required>
+						</div>
+						<div class="form-group">
+							<label for="harvest_no2" class="required_s">採收日期</label>
+							<input type="text" class="form-control shippment_input" id="harvest_no2" name="harvest_no" min="0" placeholder="" readonly required>
+						</div>
+						<div class="form-group">
+							<label for="sales_sup_id1" class="required_s">銷售對象</label>
+							<select class="form-control shippment_input selectpicker" id="sales_sup_id1" name="sales_sup_id" data-live-search="true">
+                          {% for sup in sales_sup %}
+                              <option value="{{sup.sales_sup_id}}">{{sup.name}}</option>
+                          {% endfor%}
+							</select>
+						</div>
+						 <div class="form-group">
+							<label for="shipment_qty" class="required_s">出貨量</label>
+							<input type="number" class="form-control shippment_input" id="shipment_qty" name="shipment_qty" min="0" step="0.01" placeholder="" required>
+						</div>
+						<div class="form-group">
+							<label for="qty_unit7" class="control-label required_s gacp-text">單位</label>
+							<select title="請選擇單位" id="qty_unit7" name="shipment_qty_unit" class="shippment_input selectpicker form-control" onchange="unit_selected(this);" required>
+								{% for unit in weight_units %}
+									<option value="{{unit.unit_id}}">{{unit.name}}</option>
+								{% endfor %}
+							</select>
+						</div>
+						 <div class="form-group">
+							<label for="package_qty" class="required_s">包裝重量</label>
+							<input type="number" class="form-control shippment_input" id="package_qty" name="package_qty" min="0" step="0.01" placeholder="">
+						</div>
+						<div class="form-group">
+							<label for="qty_unit8" class="control-label required_s gacp-text">單位</label>
+							<select title="請選擇單位" id="qty_unit8" name="package_qty_unit" class="shippment_input selectpicker form-control" onchange="unit_selected(this);" required>
+								{% for unit in weight_units %}
+									<option value="{{unit.unit_id}}">{{unit.name}}</option>
+								{% endfor %}
+							</select>
+						</div>
+						 <div class="form-group">
+							<label for="sales_amount" class="required_s">銷售總額</label>
+							<input type="number" class="form-control shippment_input" id="sales_amount" name="sales_amount" min="0" step="0.1" placeholder="">
+						</div>
+						<div class="form-group">
+							<label for="stamp_flow_no" class="required_s">標章流水編號起迄</label>
+							<input type="text" class="form-control shippment_input" id="stamp_flow_no" name="stamp_flow_no" placeholder="">
+						</div>
+						<div class="form-group">
+							<label for="item_grading" class="required_s">產品等級</label>
+							<p class="shippment_record_item"></p>
+							<select class="shippment_input" id="item_grading" name="item_grading" style="display:none;" data-live-search="true">
+								{% for granding in granding_list %}
+									<option value="{{granding.grading_code}}">{{granding.grading_code_name}}</option>
+								{% endfor%}
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="memo5" class="">備註</label>
+							<textarea name="memo" id="memo5" class="form-control shippment_input" placeholder="" maxlength="200" ></textarea>
+						</div>
+						<div class="form-group">
+							<input id="shippment_record_id1" class="shippment_input" type="hidden" name="sr_no">
+						</div>
+						<button type="button" onclick="gacp_update('/api/SHIPPMENT_RECORD','shippment');" class="btn btn-primary">確認修改</button>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="sales_info_modal" role="dialog" aria-labelledby="sales_info_modal_title" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="sales_info_modal_title">銷售對象聯絡資料修改</h4>
+				</div>
+				<div class="modal-body">
+					<form id="sales_info_update_form" enctype="multipart/form-data">
+						 <div class="form-group">
+							<label for="name" class="required_s">名稱</label>
+							<input type="text" class="form-control sales_info_input" id="name" name="name" min="0" placeholder="" required>
+						</div>
+						 <div class="form-group">
+							<label for="tel_no" class="required_s">電話</label>
+							<input type="text" class="form-control sales_info_input" id="tel_no" name="tel_no" min="0" placeholder="" onblur='isTel(this.value,"1")' required>
+						</div>
+						 <div class="form-group">
+							<label for="farm_addr" class="">地址</label>
+							<input type="text" class="form-control sales_info_input" id="farm_addr" name="farm_addr" placeholder="">
+						</div>
+						 <div class="form-group">
+							<label for="email" class="">e-mail</label>
+							<input type="email" class="form-control sales_info_input" id="email" name="email" placeholder="" onblur='isEmail(this.value,"1")'>
+						</div>
+						 <div class="form-group">
+							<label for="wechat_id" class="">Line</label>
+							<input type="text" class="form-control sales_info_input" id="wechat_id" name="wechat_id" placeholder="">
+						</div>
+						<div class="form-group">
+							<label for="memo6" class="">備註</label>
+							<textarea name="memo" id="memo6" class="form-control sales_info_input" placeholder="" maxlength="200" ></textarea>
+						</div>
+						<div class="form-group">
+							<input id="sales_sup_id2" class="sales_info_input" type="hidden" name="sales_sup_id">
+						</div>
+						<button type="button" onclick="gacp_update('/api/SALES_INFO','sales_info');" class="btn btn-primary">確認修改</button>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="fert_purch_modal" role="dialog" aria-labelledby="fert_purch_modal_title" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="fert_purch_modal_title">肥料資材採購紀錄表修改</h4>
+				</div>
+				<div class="modal-body">
+					<form id="fert_purch_update_form" enctype="multipart/form-data">
+						<div class="form-group">
+							<label for="purch_date2" class="required_s">採購日期</label>
+							<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control fert_purch_input" id="purch_date2" name="purch_date" required>
+						</div>
+						<div class="form-group">
+							<label for="material_code1" class="required_s">資材</label>
+							<select class="selectpicker form-control fert_purch_input" id="material_code1" name="material_code" data-live-search="true" required>
+								{% for material in fert_materials %}
+									<option value="{{material.item_no}}">{{material.item_name}}</option>
+								{% endfor%}
+							</select>
+						</div>
+						 <div class="form-group">
+							<p class="fert_purch_input" style="display:none"></p>
+						</div>
+						<div class="form-group">
+							<label for="lot_number1" class="control-label required_s">批號</label>
+							<input type="text" class="form-control fert_purch_input" id="lot_number1" name="lot_number" placeholder="資材的批號" onblur="isLotNumber(this.value,'3')" required>
+						</div>
+						 <div class="form-group">
+							<label for="price1" class="required_s">價格(每單位)</label>
+							<input type="number" class="form-control fert_purch_input" id="price1" name="price" min="0" step="0.1" placeholder="" required>
+						</div>
+						 <div class="form-group">
+							<label for="qty1" class="required_s">數量</label>
+							<input type="number" class="form-control fert_purch_input" id="qty1" name="qty" min="1" placeholder="" required>
+						</div>
+						<div class="form-group">
+							<label for="qty_unit1" class="control-label required_s gacp-text">單位</label>
+							<select id="qty_unit1" name="qty_unit" class="selectpicker form-control fert_purch_input" onchange="unit_selected(this);" required>
+								<option value="undefined" disabled selected hidden>請選擇單位</option>
+								{% for unit in material_units %}
+									<option value="{{unit.unit_id}}">{{unit.name}}</option>
+								{% endfor %}
+							</select>
+						</div>
+						 <div class="form-group">
+							<p class="fert_purch_input" style="display:none"></p>
+						</div>
+						<div class="form-group">
+							<p><b class="">點擊圖片重新上傳檔案</b></p>
+							<label for="up_file5"><img id="fert_purch_preview" class="fert_purch_input" style="width:400px; height:auto;" src="#"/></label>
+							<input type="file" capture="camera" onchange="preview(this,'fert_purch_preview')" class="form-control" id="up_file5" name="up_file" accept=".jpg,.jpeg" style="display:none;" required>
+						</div>
+						<div class="form-group">
+							<label for="memo7" class="">備註</label>
+							<textarea name="memo" id="memo7" class="form-control fert_purch_input" placeholder="" maxlength="200" ></textarea>
+						</div>
+						<div class="form-group">
+							<input id="fert_purch_record_id" class="fert_purch_input" type="hidden" name="record_id">
+						</div>
+						<button type="button" onclick="gacp_update('/api/FERT_PURCH_RECORD','fert_purch','fert_purch_preview');" class="btn btn-primary">確認修改</button>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="preve_purch_modal" role="dialog" aria-labelledby="preve_purch_modal_title" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="preve_purch_modal_title">防治資材採購紀錄表修改</h4>
+				</div>
+				<div class="modal-body">
+					<form id="preve_purch_update_form" enctype="multipart/form-data">
+						<div class="form-group">
+							<label for="purch_date3" class="required_s">採購日期</label>
+							<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control preve_purch_input" id="purch_date3" name="purch_date" required>
+						</div>
+						<div class="form-group">
+							<label for="material_code2" class="required_s">資材</label>
+							<select class="selectpicker form-control preve_purch_input" id="material_code2" name="material_code" data-live-search="true" required>
+								{% for material in prev_materials %}
+									<option value="{{material.item_no}}">{{material.item_name}}</option>
+								{% endfor%}
+							</select>
+						</div>
+						 <div class="form-group">
+							<p class="preve_purch_input" style="display:none"></p>
+						</div>
+						<div class="form-group">
+							<label for="lot_number2" class="control-label required_s">批號</label>
+							<input type="text" class="form-control preve_purch_input" id="lot_number2" name="lot_number" placeholder="資材的批號" onblur="isLotNumber(this.value,'2')" required>
+						</div>
+						 <div class="form-group">
+							<label for="price2" class="required_s">價格(每單位)</label>
+							<input type="number" class="form-control preve_purch_input" id="price2" name="price" min="0" step="0.1" placeholder="" required>
+						</div>
+						 <div class="form-group">
+							<label for="qty2" class="required_s">數量</label>
+							<input type="number" class="form-control preve_purch_input" id="qty2" name="qty" min="1" placeholder="" required>
+						</div>
+						<div class="form-group">
+							<label for="qty_unit2" class="control-label required_s gacp-text">單位</label>
+							<select id="qty_unit2" name="qty_unit" class="selectpicker form-control preve_purch_input" onchange="unit_selected(this);" required>
+								<option value="undefined" disabled selected hidden>請選擇單位</option>
+								{% for unit in material_units %}
+									<option value="{{unit.unit_id}}">{{unit.name}}</option>
+								{% endfor %}
+							</select>
+						</div>
+						 <div class="form-group">
+							<p class="preve_purch_input" style="display:none"></p>
+						</div>
+						<div class="form-group">
+							<p><b class="">點擊圖片重新上傳檔案</b></p>
+							<label for="up_file6"><img id="preve_purch_preview" class="preve_purch_input" style="width:400px; height:auto;" src="#"/></label>
+							<input type="file" capture="camera" onchange="preview(this,'preve_purch_preview')" class="form-control" id="up_file6" name="up_file" accept=".jpg,.jpeg" style="display:none;" required>
+						</div>
+						<div class="form-group">
+							<label for="memo8" class="">備註</label>
+							<textarea name="memo" id="memo8" class="form-control preve_purch_input" placeholder="" maxlength="200" ></textarea>
+						</div>
+						<div class="form-group">
+							<input id="preve_purch_record_id" class="preve_purch_input" type="hidden" name="record_id">
+						</div>
+						<button type="button" onclick="gacp_update('/api/PREVE_PURCH_RECORD','preve_purch','preve_purch_preview');" class="btn btn-primary">確認修改</button>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="other_purch_modal" role="dialog" aria-labelledby="other_purch_modal_title" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="other_purch_modal_title">其他資材採購紀錄表修改</h4>
+				</div>
+				<div class="modal-body">
+					<form id="other_purch_update_form" enctype="multipart/form-data">
+						<div class="form-group">
+							<label for="purch_date4" class="required_s">採購日期</label>
+							<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control other_purch_input" id="purch_date4" name="purch_date" required>
+						</div>
+						<div class="form-group">
+							<label for="material_code3" class="required_s">資材</label>
+							<select class="selectpicker form-control other_purch_input" id="material_code3" name="material_code" data-live-search="true" required>
+								{% for material in other_materials %}
+									<option value="{{material.item_no}}">{{material.item_name}}</option>
+								{% endfor%}
+							</select>
+						</div>
+						 <div class="form-group">
+							<p class="other_purch_input" style="display:none"></p>
+						</div>
+						<div class="form-group">
+							<label for="lot_number3" class="control-label required_s">批號</label>
+							<input type="text" class="form-control other_purch_input" id="lot_number3" name="lot_number" placeholder="資材的批號" onblur="isLotNumber(this.value,'3')" required>
+						</div>
+						 <div class="form-group">
+							<label for="price3" class="required_s">價格(每單位)</label>
+							<input type="number" class="form-control other_purch_input" id="price3" name="price" min="0" step="0.1" placeholder="" required>
+						</div>
+						 <div class="form-group">
+							<label for="qty3" class="required_s">數量</label>
+							<input type="number" class="form-control other_purch_input" id="qty3" name="qty" min="1" placeholder="" required>
+						</div>
+						<div class="form-group">
+							<label for="qty_unit3" class="control-label required_s gacp-text">單位</label>
+							<select id="qty_unit3" name="qty_unit" class="selectpicker form-control other_purch_input" onchange="unit_selected(this);" required>
+								<option value="undefined" disabled selected hidden>請選擇單位</option>
+								{% for unit in material_units %}
+									<option value="{{unit.unit_id}}">{{unit.name}}</option>
+								{% endfor %}
+							</select>
+						</div>
+						 <div class="form-group">
+							<p class="other_purch_input" style="display:none"></p>
+						</div>
+						<div class="form-group">
+							<p><b class="">點擊圖片重新上傳檔案</b></p>
+							<label for="up_file7"><img id="other_purch_preview" class="other_purch_input" style="width:400px; height:auto;" src="#"/></label>
+							<input type="file" capture="camera" onchange="preview(this,'other_purch_preview')" class="form-control" id="up_file7" name="up_file" accept=".jpg,.jpeg" style="display:none;" required>
+						</div>
+						<div class="form-group">
+							<label for="memo9" class="">備註</label>
+							<textarea name="memo" id="memo9" class="form-control other_purch_input" placeholder="" maxlength="200" ></textarea>
+						</div>
+						<div class="form-group">
+							<input id="other_purch_record_id" class="other_purch_input" type="hidden" name="record_id">
+						</div>
+						<button type="button" onclick="gacp_update('/api/OTHER_PURCH_RECORD','other_purch','other_purch_preview');" class="btn btn-primary">確認修改</button>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade" id="other_inspection_upld_modal" role="dialog" aria-labelledby="other_inspection_upld_modal_title" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="other_inspection_upld_modal_title">各項檢驗分析表照片修改</h4>
+				</div>
+				<div class="modal-body">
+					<form id="other_inspection_upld_update_form" enctype="multipart/form-data">
+						<div class="form-group">
+							<label for="up_date2" class="required_s">日期</label>
+							<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control other_inspection_upld_input" id="up_date2" name="up_date" required>
+						</div>
+						<div class="form-group">
+							<p><b class="">點擊圖片重新上傳檔案</b></p>
+							<label for="up_file3"><img id="other_inspection_upld_preview" class="other_inspection_upld_input" style="width:400px; height:auto;" src="#"/></label>
+							<input type="file" capture="camera" onchange="preview(this,'other_inspection_upld_preview')" class="form-control" id="up_file3" name="up_file" accept=".jpg,.jpeg" style="display:none;" required>
+						</div>
+						<div class="form-group">
+							<label for="memo11" class="">內容</label>
+							<textarea name="memo" id="memo11" class="form-control other_inspection_upld_input" placeholder="" maxlength="200" ></textarea>
+						</div>
+						<div class="form-group">
+							<input id="other_inspection_upld_record_id" class="other_inspection_upld_input" type="hidden" name="oii_no">
+						</div>
+						<button type="button" onclick="gacp_update('/api/OTHER_INSPECTION_INFO','other_inspection_upld','other_inspection_upld_preview');" class="btn btn-primary">確認修改</button>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="certificate_mark_modal" role="dialog" aria-labelledby="certificate_mark_modal_title" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="certificate_mark_title">各項檢驗分析表照片修改</h4>
+				</div>
+				<div class="modal-body">
+					<form id="certificate_mark_update_form" enctype="multipart/form-data">
+						<div class="form-group">
+							<label for="mark_name" class="required_s control-label">認證標章</label>
+							<select name="certificate_list_id" id="certificate_list_id" class="selectpicker form-control certificate_mark_input" data-live-search="true" data-select-by-id='{"table":"CERTIFICATE_MRAK", "id":"mi", "target":"cli"}' required>
+								{% for certificate in certificate_list %}
+									<option data-content="<img class='certificate_mark_small' src='{{certificate.mark_image_addr}}'></img> {{certificate.mark_name}}" value="{{certificate.certificate_list_id}}"></option>
+								{% endfor%}
+							</select>
+						</div>
+						<div class="form-group mark_place_holder">
+							<p class="certificate_mark_input" style="display:none;"></p>
+						</div>
+						<div class="form-group">
+							<p class="certificate_mark_input" style="display:none;"></p>
+						</div>
+						<div class="form-group">
+							<p><b class=" required_s">點擊圖片重新上傳檔案</b></p>
+							<label for="up_file4"><img id="certificate_mark_preview" class="certificate_mark_input" style="width:400px; height:auto;" src="#"/></label>
+							<input type="file" capture="camera" onchange="preview(this,'certificate_mark_preview')" class="form-control" id="up_file4" name="up_file" accept=".jpg,.jpeg" style="display:none;" required>
+						</div>
+						<div class="form-group">
+							<label for="up_date3" class="control-label required_s ">有效日期</label>
+							<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control certificate_mark_input" id="up_date3" name="up_date" required>
+						</div>
+						<div class="form-group">
+							<input id="certificate_mark_record_id" class="certificate_mark_input" type="hidden" name="mark_id">
+						</div>
+						<button type="button" onclick="gacp_update('/api/CERTIFICATE_MRAK','certificate_mark','certificate_mark_preview');" class="btn btn-primary">確認修改</button>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="other_notes_modal" role="dialog" aria-labelledby="other_notes_modal_title" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="other_notes_modal_title">其他記事修改</h4>
+				</div>
+				<div class="modal-body">
+					<form id="other_notes_update_form" enctype="multipart/form-data">
+						<div class="form-group">
+							<label for="other_date" class="required_s">日期</label>
+							<input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control other_notes_input" id="other_date" name="other_date" readonly required>
+						</div>
+						<div class="form-group">
+							<label for="memo12" class="required_s">內容</label>
+							<textarea name="memo" id="memo12" class="form-control other_notes_input" placeholder="" maxlength="200" ></textarea>
+						</div>
+						<button type="button" onclick="gacp_update('/api/OTHER_NOTES','other_notes');" class="btn btn-primary">確認修改</button>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- /Modals -->
+{% endblock %}
+{% block page_script %}
+<!-- CDNJS :: Sortable (https://cdnjs.com/) -->
+<script src="//cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js"></script>
+<!-- CDNJS :: Vue.Draggable (https://cdnjs.com/) -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.15.0/vuedraggable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.9/dist/js/bootstrap-select.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.5.3/jspdf.debug.js" integrity="sha384-NaWTHo/8YCBYJ59830LTz/P4aQZK1sS0SneOgAvhsIl3zBu8r9RevNg5lHCHAuQ/" crossorigin="anonymous"></script>
+<script>
+var	searched_flag =false
+var query_data
+var prd_urls = [] //purchase record
+var oii_urls = [] //other inspection info
+
+function gacp_search(){
+	prd_urls = []
+	oii_urls = []
+	$("tbody tr").remove();
+	let farm_id_selected = $("#farm_id option:selected").val()
+	let field_id_selected = $("#field_id option:selected").val()
+	let gacp_no_selected = $("#gacp_no option:selected").val()
+	if (10 <= field_id_selected & field_id_selected<100){
+		field_id_selected = "0"+field_id_selected.toString() 
+	}else if (0<=field_id_selected & field_id_selected<10){
+		field_id_selected = "00"+field_id_selected.toString() 
+	}
+	let gacp_no_check = farm_id_selected + "f" + field_id_selected
+
+	if (!gacp_no_selected.match(gacp_no_check)){
+		Swal.fire({
+			icon: 'error',
+			title: "請先選擇農場編號、場域編號",
+		})
+	}else if (gacp_no_selected.match(gacp_no_check)){
+		$.ajax({
+			type:'GET',
+			url:"/api/gacp_search/getdata",
+			data:{"farm_id_search":farm_id_selected,
+				"field_id_search":field_id_selected,
+				"gacp_no_search":gacp_no_selected},
+			success:function(data){
+				Swal.fire({
+					icon: 'success',
+					title: "查詢成功",
+				})
+				searched_flag = true
+				query_data = data
+				SEED_REGIS_FORM_change(data);
+				CULT_WORK_RECORD_change(data);
+				FERT_CONS_RECORD_change(data);
+				PESTS_DISEASES_RECORD_change(data);
+				HARVEST_RECORD_change(data);
+				SHIPPMENT_RECORD_change(data);
+				SALES_INFO_change(data);
+				FERT_PURCH_RECORD_change(data);
+				PREVE_PURCH_RECORD_change(data);
+				OTHER_PURCH_RECORD_change(data);
+				OTHER_INSPECTION_INFO_change(data);
+				CERTIFICATE_MRAK_change(data);
+				OTHER_NOTES_change(data);
+				$(".trace_link").attr("href",location.protocol+"/trace?no="+gacp_no_selected)
+				$(".trace_link").text("新分頁開啟連結")
+			},
+			error:function(data){
+				Swal.fire({
+					icon: 'error',
+					title: "搜尋失敗，請確認各項編號正確對應",
+				})
+			}
+		})
+	}
+}
+
+function SEED_REGIS_FORM_change(data){
+	let _data = data.SEED_REGIS_FORM
+	for(var i=0;i<_data.length;i++){
+		_data[i].sr = _data[i].sr ? "是" : "否"
+		$("#seed_regis_tbody").append("<tr id='seed_regis_tr"+i+"'></tr>")
+		$("#seed_regis_tr"+i).append("<td><p>"+_data[i].cnm+"</p></td>")
+		$("#seed_regis_tr"+i).append("<td><p>"+_data[i].inm+"</p></td>")
+		$("#seed_regis_tr"+i).append("<td><p>"+_data[i].sq+"</p></td>")
+		$("#seed_regis_tr"+i).append("<td><p>"+_data[i].squ+"</p></td>")
+		$("#seed_regis_tr"+i).append("<td><p>"+_data[i].sr+"</p></td>")
+		$("#seed_regis_tr"+i).append("<td><p>"+_data[i].snm+"</p></td>")
+		$("#seed_regis_tr"+i).append("<td><p>"+_data[i].pd+"</p></td>")
+		{% if (is_superuser == 0) or (is_superuser == 1)%}
+			$("#seed_regis_tr"+i).append("<td><button type='button' class='btn btn-success' onclick='update_modal(this)' data-key='seed_regis_tr"+i+"' data-dataid='"+_data[i].ri+"'>修改</button></td>")
+		{% endif %}
+	}
+}
+
+function CULT_WORK_RECORD_change(data){
+	let _data = data.CULT_WORK_RECORD;
+	for(var i=0;i<_data.length;i++){
+		$("#cult_work_tbody").append("<tr id='cult_work_tr"+i+"'></tr>")
+		$("#cult_work_tr"+i).append("<td><p>"+_data[i].ri+"</p></td>")
+		$("#cult_work_tr"+i).append("<td><p>"+_data[i].wd+"</p></td>")
+		if( _data[i].ia != "" && _data[i].ia != null){
+			$("#cult_work_tr"+i).append("<td><a onclick=\'show_pic(\"cult_work"+i+"\",this)\' class=''>點擊顯示圖片</a><img src='"+_data[i].ia+"' id='cult_work"+i+"' style='max-width:100%;width:auto;height:auto;display:none;'></td>")
+		}else{
+			$("#cult_work_tr"+i).append("<td><a></a><img src='' id='cult_work"+i+"' style='max-width:100%;width:auto;height:auto;display:none;'></td>")
+		}
+		$("#cult_work_tr"+i).append("<td><textarea readonly>"+_data[i].mm+"</textarea></td>")
+		{% if (is_superuser == 0) or (is_superuser == 1)%}
+			$("#cult_work_tr"+i).append("<td><button type='button' class='btn btn-success' onclick='update_modal(this)' data-key='cult_work_tr"+i+"' data-dataid='"+_data[i].id+"'>修改</button></td>")
+		{% endif %}
+	}
+}
+
+function FERT_CONS_RECORD_change(data){
+	let _data = data.FERT_CONS_RECORD;
+	for(var i=0;i<_data.length;i++){
+		$("#fert_cons_tbody").append("<tr id='fert_cons_tr"+i+"'></tr>")
+		$("#fert_cons_tr"+i).append("<td><p>"+_data[i].fc+"</p></td>")
+		$("#fert_cons_tr"+i).append("<td><p>"+_data[i].fd+"</p></td>")
+		$("#fert_cons_tr"+i).append(`<td><p>${_data[i].ino1}(批號:${_data[i].ln})</p></td>`)
+		$("#fert_cons_tr"+i).append("<td><p>"+_data[i].aq+"</p></td>")
+		$("#fert_cons_tr"+i).append("<td><p>"+_data[i].qu+"</p></td>")
+		$("#fert_cons_tr"+i).append("<td><textarea readonly>"+_data[i].mm+"</textarea></td>")
+		{% if (is_superuser == 0) or (is_superuser == 1)%}
+			$("#fert_cons_tr"+i).append("<td><button type='button' class='btn btn-success' onclick='update_modal(this)' data-key='fert_cons_tr"+i+"' data-dataid='"+_data[i].fi+"'>修改</button></td>")
+		{% endif %}
+	}
+}
+
+function PESTS_DISEASES_RECORD_change(data){
+	let _data = data.PESTS_DISEASES_RECORD;
+	for(var i=0;i<_data.length;i++){
+		$("#pests_dise_tbody").append("<tr id='pests_dise_tr"+i+"'></tr>")
+		$("#pests_dise_tr"+i).append("<td><p>"+_data[i].coc+"</p></td>")
+		$("#pests_dise_tr"+i).append("<td><p>"+_data[i].fd+"</p></td>")
+		$("#pests_dise_tr"+i).append(`<td><p>${_data[i].ino1}(批號:${_data[i].ln})</p></td>`)
+		$("#pests_dise_tr"+i).append("<td><p>"+_data[i].aq+"</p></td>")
+		$("#pests_dise_tr"+i).append("<td><p>"+_data[i].qu+"</p></td>")
+		$("#pests_dise_tr"+i).append("<td><p>"+_data[i].dr+"</p></td>")
+		$("#pests_dise_tr"+i).append("<td><textarea readonly>"+_data[i].pm+"</textarea></td>")
+		{% if (is_superuser == 0) or (is_superuser == 1)%}
+			$("#pests_dise_tr"+i).append("<td><button type='button' class='btn btn-success' onclick='update_modal(this)' data-key='pests_dise_tr"+i+"' data-dataid='"+_data[i].pn+"'>修改</button></td>")
+		{% endif %}
+	}
+}
+
+function HARVEST_RECORD_change(data){
+	let _data = data.HARVEST_RECORD;
+	for(var i=0;i<_data.length;i++){
+		$("#harvest_tbody").append("<tr id='harvest_tr"+i+"'></tr>")
+		$("#harvest_tr"+i).append("<td><p>"+_data[i].wd+"</p></td>")
+		$("#harvest_tr"+i).append("<td><p>"+_data[i].hq+"</p></td>")
+		$("#harvest_tr"+i).append("<td><p>"+_data[i].nm+"</p></td>")
+		$("#harvest_tr"+i).append("<td><p>"+_data[i].gc+"</p></td>")
+		$("#harvest_tr"+i).append("<td><p>"+_data[i].sc+"</p></td>")
+		$("#harvest_tr"+i).append("<td><textarea readonly>"+_data[i].wm+"</textarea></td>")
+		$("#harvest_tr"+i).append("<td><textarea readonly>"+_data[i].mm+"</textarea></td>")
+		{% if (is_superuser == 0) or (is_superuser == 1)%}
+			$("#harvest_tr"+i).append("<td><button type='button' class='btn btn-success' onclick='update_modal(this)' data-key='harvest_tr"+i+"' data-dataid='"+_data[i].ri+"'>修改</button></td>")
+		{% endif %}
+	}
+}
+
+function SHIPPMENT_RECORD_change(data){
+	let _data = data.SHIPPMENT_RECORD;
+	for(var i=0;i<_data.length;i++){
+		$("#shippment_tbody").append("<tr id='shippment_tr"+i+"'></tr>")
+		$("#shippment_tr"+i).append("<td><p>"+_data[i].sd+"</p></td>")
+		$("#shippment_tr"+i).append("<td><p>"+_data[i].hn+"</p></td>")
+		$("#shippment_tr"+i).append("<td><p>"+_data[i].ssi+"</p></td>")
+		$("#shippment_tr"+i).append("<td><p>"+_data[i].sq+"</p></td>")
+		$("#shippment_tr"+i).append("<td><p>"+_data[i].squ+"</p></td>")
+		$("#shippment_tr"+i).append("<td><p>"+_data[i].pq+"</p></td>")
+		$("#shippment_tr"+i).append("<td><p>"+_data[i].pqu+"</p></td>")
+		$("#shippment_tr"+i).append("<td><p>"+_data[i].sa+"</p></td>")
+		$("#shippment_tr"+i).append("<td><p>"+_data[i].sfn+"</p></td>")
+		$("#shippment_tr"+i).append("<td><p>"+_data[i].ig+"</p></td>")
+		$("#shippment_tr"+i).append("<td><textarea readonly>"+_data[i].mm+"</textarea></td>")
+		{% if (is_superuser == 0) or (is_superuser == 1)%}
+			$("#shippment_tr"+i).append("<td><button type='button' class='btn btn-success' onclick='update_modal(this)' data-key='shippment_tr"+i+"' data-dataid='"+_data[i].sn+"'>修改</button></td>")
+		{% endif %}
+	}
+}
+
+function SALES_INFO_change(data){
+	let _data = data.SALES_INFO;
+	for(var i=0;i<_data.length;i++){
+		$("#sales_info_tbody").append("<tr id='sales_info_tr"+i+"'></tr>")
+		$("#sales_info_tr"+i).append("<td><p>"+_data[i].nm+"</p></td>")
+		$("#sales_info_tr"+i).append("<td><p>"+_data[i].tn+"</p></td>")
+		$("#sales_info_tr"+i).append("<td><p>"+_data[i].fa+"</p></td>")
+		$("#sales_info_tr"+i).append("<td><p>"+_data[i].em+"</p></td>")
+		$("#sales_info_tr"+i).append("<td><p>"+_data[i].wi+"</p></td>")
+		$("#sales_info_tr"+i).append("<td><textarea readonly>"+_data[i].mm+"</textarea></td>")
+		{% if (is_superuser == 0) or (is_superuser == 1)%}
+			$("#sales_info_tr"+i).append("<td><button type='button' class='btn btn-success' onclick='update_modal(this)' data-key='sales_info_tr"+i+"' data-dataid='"+_data[i].ssi+"'>修改</button></td>")
+		{% endif %}
+	}
+}
+
+function FERT_PURCH_RECORD_change(data){
+	let _data = data.FERT_PURCH_RECORD;
+	for(var i=0;i<_data.length;i++){
+		$("#fert_purch_tbody").append("<tr id='fert_purch_tr"+i+"'></tr>")
+		$("#fert_purch_tr"+i).append("<td><p>"+_data[i].pd+"</p></td>")
+		$("#fert_purch_tr"+i).append("<td><p>"+_data[i].mc+"</p></td>")
+		$("#fert_purch_tr"+i).append("<td><p>"+_data[i].si+"</p></td>")
+		$("#fert_purch_tr"+i).append("<td><p>"+_data[i].mn+"</p></td>")
+		$("#fert_purch_tr"+i).append("<td><p>"+_data[i].pr+"</p></td>")
+		$("#fert_purch_tr"+i).append("<td><p>"+_data[i].qt+"</p></td>")
+		$("#fert_purch_tr"+i).append("<td><p>"+_data[i].qu+"</p></td>")
+		$("#fert_purch_tr"+i).append("<td><p>"+_data[i].st+"</p></td>")
+		$("#fert_purch_tr"+i).append("<td><a onclick=\'show_pic(\"fert_purch_upld"+i+"\",this)\'>點擊顯示圖片</a><img src='"+_data[i].uf+"' id='fert_purch_upld"+i+"' style='max-width:100%;width:auto;height:auto;display:none;'></td>")
+		$("#fert_purch_tr"+i).append("<td><textarea readonly>"+_data[i].mm+"</textarea></td>")
+		{% if (is_superuser == 0) or (is_superuser == 1)%}
+			$("#fert_purch_tr"+i).append("<td><button type='button' class='btn btn-success' onclick='update_modal(this)' data-key='fert_purch_tr"+i+"' data-dataid='"+_data[i].ri+"'>修改</button></td>")
+		{% endif %}
+		prd_urls.push(_data[i].uf)
+	}
+}
+
+function PREVE_PURCH_RECORD_change(data){
+	let _data = data.PREVE_PURCH_RECORD;
+	for(var i=0;i<_data.length;i++){
+		$("#preve_purch_tbody").append("<tr id='preve_purch_tr"+i+"'></tr>")
+		$("#preve_purch_tr"+i).append("<td><p>"+_data[i].pd+"</p></td>")
+		$("#preve_purch_tr"+i).append("<td><p>"+_data[i].mc+"</p></td>")
+		$("#preve_purch_tr"+i).append("<td><p>"+_data[i].si+"</p></td>")
+		$("#preve_purch_tr"+i).append("<td><p>"+_data[i].mn+"</p></td>")
+		$("#preve_purch_tr"+i).append("<td><p>"+_data[i].pr+"</p></td>")
+		$("#preve_purch_tr"+i).append("<td><p>"+_data[i].qt+"</p></td>")
+		$("#preve_purch_tr"+i).append("<td><p>"+_data[i].qu+"</p></td>")
+		$("#preve_purch_tr"+i).append("<td><p>"+_data[i].st+"</p></td>")
+		$("#preve_purch_tr"+i).append("<td><a onclick=\'show_pic(\"preve_purch_upld"+i+"\",this)\'>點擊顯示圖片</a><img src='"+_data[i].uf+"' id='preve_purch_upld"+i+"' style='max-width:100%;width:auto;height:auto;display:none;'></td>")
+		$("#preve_purch_tr"+i).append("<td><textarea readonly>"+_data[i].mm+"</textarea></td>")
+		{% if (is_superuser == 0) or (is_superuser == 1)%}
+			$("#preve_purch_tr"+i).append("<td><button type='button' class='btn btn-success' onclick='update_modal(this)' data-key='preve_purch_tr"+i+"' data-dataid='"+_data[i].ri+"'>修改</button></td>")
+		{% endif %}
+		prd_urls.push(_data[i].uf)
+	}
+}
+
+function OTHER_PURCH_RECORD_change(data){
+	let _data = data.OTHER_PURCH_RECORD;
+	for(var i=0;i<_data.length;i++){
+		$("#other_purch_tbody").append("<tr id='other_purch_tr"+i+"'></tr>")
+		$("#other_purch_tr"+i).append("<td><p>"+_data[i].pd+"</p></td>")
+		$("#other_purch_tr"+i).append("<td><p>"+_data[i].mc+"</p></td>")
+		$("#other_purch_tr"+i).append("<td><p>"+_data[i].si+"</p></td>")
+		$("#other_purch_tr"+i).append("<td><p>"+_data[i].mn+"</p></td>")
+		$("#other_purch_tr"+i).append("<td><p>"+_data[i].pr+"</p></td>")
+		$("#other_purch_tr"+i).append("<td><p>"+_data[i].qt+"</p></td>")
+		$("#other_purch_tr"+i).append("<td><p>"+_data[i].qu+"</p></td>")
+		$("#other_purch_tr"+i).append("<td><p>"+_data[i].st+"</p></td>")
+		$("#other_purch_tr"+i).append("<td><a onclick=\'show_pic(\"other_purch_upld"+i+"\",this)\'>點擊顯示圖片</a><img src='"+_data[i].uf+"' id='other_purch_upld"+i+"' style='max-width:100%;width:auto;height:auto;display:none;'></td>")
+		$("#other_purch_tr"+i).append("<td><textarea readonly>"+_data[i].mm+"</textarea></td>")
+		{% if (is_superuser == 0) or (is_superuser == 1)%}
+			$("#other_purch_tr"+i).append("<td><button type='button' class='btn btn-success' onclick='update_modal(this)' data-key='other_purch_tr"+i+"' data-dataid='"+_data[i].ri+"'>修改</button></td>")
+		{% endif %}
+		prd_urls.push(_data[i].uf)
+	}
+}
+
+function OTHER_INSPECTION_INFO_change(data){
+	let _data = data.OTHER_INSPECTION_INFO;
+	for(var i=0;i<_data.length;i++){
+		$("#other_inspection_upld_tbody").append("<tr id='other_inspection_upld_tr"+i+"'></tr>")
+		$("#other_inspection_upld_tr"+i).append("<td><p>"+_data[i].ud+"</p></td>")
+		$("#other_inspection_upld_tr"+i).append("<td><a onclick=\'show_pic(\"other_inspection_upld"+i+"\",this)\' class=''>點擊顯示圖片</a><img src='"+_data[i].uf+"' id='other_inspection_upld"+i+"' style='max-width:100%;width:auto;height:auto;display:none;'></td>")
+		$("#other_inspection_upld_tr"+i).append("<td><textarea readonly>"+_data[i].mm+"</textarea></td>")
+		{% if (is_superuser == 0) or (is_superuser == 1)%}
+			$("#other_inspection_upld_tr"+i).append("<td><button type='button' class='btn btn-success' onclick='update_modal(this)' data-key='other_inspection_upld_tr"+i+"' data-dataid='"+_data[i].on+"'>修改</button></td>")
+		{% endif %}
+		oii_urls.push(_data[i].uf)
+	}
+}
+
+function CERTIFICATE_MRAK_change(data){
+	let _data = data.CERTIFICATE_MRAK;
+	for(var i=0;i<_data.length;i++){
+		$("#certificate_mark_tbody").append("<tr id='certificate_mark_tr"+i+"'></tr>")
+		$("#certificate_mark_tr"+i).append("<td><img src="+_data[i].mia+" style='height:50px;width:50px;'></img></td>")
+		$("#certificate_mark_tr"+i).append("<td><p>"+_data[i].mn+"</p></td>")
+		$("#certificate_mark_tr"+i).append("<td><p>"+_data[i].ab+"</p></td>")
+		$("#certificate_mark_tr"+i).append("<td><a onclick=\'show_pic(\"certificate_mark"+i+"\",this)\' class=''>點擊顯示圖片</a><img src='"+_data[i].ia+"' id='certificate_mark"+i+"' style='max-width:100%;width:auto;height:auto;display:none;'></td>")
+		$("#certificate_mark_tr"+i).append("<td><p>"+_data[i].ed+"</p></td>")
+		{% if (is_superuser == 0) or (is_superuser == 1)%}
+			$("#certificate_mark_tr"+i).append("<td><button type='button' class='btn btn-success' onclick='update_modal(this)' data-key='certificate_mark_tr"+i+"' data-dataid='"+_data[i].mi+"'>修改</button></td>")
+		{% endif %}
+	}
+}
+
+function OTHER_NOTES_change(data){
+	let _data = data.OTHER_NOTES;
+	for(var i=0;i<_data.length;i++){
+		$("#other_notes_tbody").append("<tr id='other_notes_tr"+i+"'></tr>")
+		$("#other_notes_tr"+i).append("<td><p>"+_data[i].od+"</p></td>")
+		$("#other_notes_tr"+i).append("<td><textarea readonly>"+_data[i].mm+"</textarea></td>")
+		$("#other_notes_tr"+i).append("<td><p>"+_data[i].un+"</p></td>")
+		{% if (is_superuser == 0) or (is_superuser == 1)%}
+			$("#other_notes_tr"+i).append("<td><button type='button' class='btn btn-success' onclick='update_modal(this)' data-key='other_notes_tr"+i+"' data-dataid='"+_data[i].od+"'>修改</button></td>")
+		{% endif %}
+	}
+	
+	$(".other_date_control").find("option").remove();
+	 if (data.OTHER_NOTES.length != 0){
+		$(".user_name_text").text(data.OTHER_NOTES[0].un);
+		$(".memo13_text").text(data.OTHER_NOTES[0].mm);
+		for (var i in data.OTHER_NOTES){
+			$(".other_date_control").append($("<option></option>").attr("value", i).text(data.OTHER_NOTES[i].od));
+		}
+		$(".other_date_control").change(function(){
+		let other_date_selected = $(".other_date_control option:selected").val();
+		$(".user_name_text").text(data.OTHER_NOTES[other_date_selected].un);
+		$(".memo13_text").text(data.OTHER_NOTES[other_date_selected].mm);
+		})
+	 }
+
+	$(document).on('click','th',function(){
+		var table = $(this).parents('table').eq(0);
+		var rows = table.find('tr:gt(0)').toArray().sort(comparer($(this).index()));
+		this.asc = !this.asc;
+		if (!this.asc){rows = rows.reverse();}
+		table.children('tbody').empty().html(rows);
+	});
+	function comparer(index) {
+			return function(a, b) {
+					var valA = getCellValue(a, index), valB = getCellValue(b, index);
+					return $.isNumeric(valA) && $.isNumeric(valB) ?
+							valA - valB : valA.localeCompare(valB);
+			};
+	}
+	function getCellValue(row, index){
+			return $(row).children('td').eq(index).text();
+	}
+}
+
+function field_id_filter(){
+	searched_flag =false
+	$(".first_be_hided").remove()
+	var target1 =  $("#farm_id option:selected").val()
+	$("#field_id option").each(function(){
+		$(this).hide();
+		$(this).prop("selected", false);
+		let data_farm = $(this).data("farm");
+		if (target1 == data_farm){
+			$(this).show();
+		}
+	})
+}
+
+function gacp_no_filter(){
+	searched_flag =false
+	$("#gacp_no option").prop("selected", false);
+	$("#gacp_no option").each(function(){
+		var target1 =  $("#farm_id option:selected").val()
+		var target2 =  $("#field_id option:selected").val()
+		var item = this.text;
+		var frag1 = item.split('f')
+		var frag2 = ""
+		if(frag1!=""){
+			var frag2 = frag1[1].split('t')
+		}
+		if(frag1[0].replace(/\b(0+)/gi,"") == target1){
+			if(frag2[0].replace(/\b(0+)/gi,"") == target2){
+				$(this).show();
+				$(this).prop("selected", true);
+			}else{
+				$(this).hide();
+			}
+		}else{
+			$(this).hide();
+		}
+	})
+}
+
+function show_pic(pic_id,obj){
+	if($("#"+pic_id).css("display") == "none"){
+		$("#"+pic_id).show()
+		$(obj).text("點擊關閉圖片")
+	}else if($("#"+pic_id).css("display") == "inline"){
+		$("#"+pic_id).hide()
+		$(obj).text("點擊顯示圖片")
+	}
+}
+
+$("#field_id option").each(function(){
+	$(this).hide();
+})
+$("#gacp_no option").each(function(){
+	$(this).hide();
+})
+
+//填入选择的数据
+function update_modal(row){
+	//var labels = []
+	var datas = []
+	var key = row.dataset.key;
+	var dataid = row.dataset.dataid 
+	/*$("#"+key).parents("table").find("thead tr th").each(function(){
+		labels.push(this.textContent)
+	})
+	labels = labels.slice(0,-1);//去除空格*/
+	$("#"+key).children().each(function(){
+		$(this).children().each(function(){
+			child_tag = $(this).prop('tagName')
+			if(child_tag == "P"){
+				datas.push(this.textContent)
+			}else if(child_tag == "TEXTAREA"){
+				datas.push($(this).val())
+			}else if(child_tag == "IMG"){
+				datas.push($(this).attr("src"))
+			}
+		})
+	})
+	if(dataid){
+		datas.push(parseInt(dataid))
+	}
+	var table = key.split("_tr")[0]
+	var counter = 0
+	$("."+table+"_input").each(function(index){
+		var tag = $(this).prop('tagName')
+		if (tag == "DIV"){
+			counter = counter;
+		}else if(tag == "IMG"){
+			$(this).attr("src",datas[counter])
+			counter+=1;
+		}else if(tag == "INPUT"){
+			if($(this).prop('type') == "date"){
+				datas[counter] = datas[counter].replace(/\//g,"-")
+			}else if($(this).prop('type') == "number"){
+				datas[counter] = datas[counter].replace(",","")
+			}
+			$(this).prop("value",datas[counter]);
+			counter+=1;
+		}else if(tag == "SELECT"){
+				if($(this).data("selectById")){
+					let temp_data = $(this).data("selectById")
+					let table = query_data[temp_data.table]
+					for (col in table){
+						if (table[col][temp_data.id] == dataid){
+							console.log($(this).val())
+							$(this).val(table[col][temp_data.target])
+							console.log($(this).val())
+						}
+					}
+					$(this).val()
+				}else{
+					$(this).find("option").each(function(){
+						$(this).prop("selected", false);
+						if($(this).text() == datas[counter]){
+							$(this).prop("selected", true);
+						}
+					})
+				}
+			counter+=1;
+		}else if(tag == "TEXTAREA"){
+			$(this).val("");
+			$(this).val(datas[counter]);
+			counter+=1;
+		}else if(tag == "P"){
+			$(this).text("");
+			$(this).text(datas[counter]);
+			counter+=1;
+		}
+		if(counter == datas.length-1){
+			return;
+		}
+		$('.selectpicker').selectpicker('refresh')//刷新下拉選單
+	})
+	selfReserved($("#self_reserved"))
+	
+	$("."+table+"_record_item").each(function(){
+		$(this).text($(this).next().find("option:selected").text())
+	})
+	
+	$('#'+table+"_modal").modal('show')
+}
+
+function gacp_update(api_url,key,addr=""){
+	var formData = new FormData($("#"+key+"_update_form")[0])
+	formData.append("gacp_no",$("#gacp_no").val())
+	if(addr!=""){
+		old_addr = $("#"+addr).attr("src")
+		formData.append("old_pic_addr",old_addr)
+	}
+	
+	$.ajax(
+		{
+			url: api_url,
+			type: "PUT",
+			async: false,
+			processData: false,
+			contentType: false,
+			data: formData,
+			success:function(data){
+				$("#"+key+"_modal").modal('toggle')
+				gacp_search();
+			},
+			error:function(xhr, ajaxOptions, thrownError){
+				alert("更新失敗");
+			}
+		}
+	)
+}
+//圖片預覽
+function preview(file,selector){
+	if (file.files && file.files[0]) {
+		var reader = new FileReader();
+		
+		reader.onload = function(e) {
+			$("#"+selector).attr('src', e.target.result);
+		}
+		
+		reader.readAsDataURL(file.files[0]);
+	}
+}
+//選擇自培育種隱藏日期跟來源
+function selfReserved(obj){
+	var val = $(obj).val()
+	if (val==1){
+		$(".seed_hide_box").hide()
+		$("#sup_id4").val($("#sup_id4").prop('defaultSelected'))
+		$('#sup_id4').selectpicker('refresh');
+		$("#purch_date1").val("")
+	}else{
+		$(".seed_hide_box").show()
+	}
+	return;
+}
+
+function isEmail(str,num) {
+	if (str.search(/\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}/) != -1){
+		$("#email_alert_text"+num).remove();
+		return true;
+	}
+	else{
+		$("#email_alert_text"+num).remove();
+		$("#email_box"+num).append('<p id="email_alert_text'+num+'" style="color:red;">'+"請輸入有效郵件地址"+'</p>');
+	}
+}
+
+function isTel(str,num) {
+	if (str.search(/^\d{7,17}$/) != -1){
+		$("#tel_alert_text"+num).remove();
+		return true;
+	}
+	else{
+		$("#tel_alert_text"+num).remove();
+		$("#tel_box"+num).append('<p id="tel_alert_text'+num+'" style="color:red;">'+"請輸入有效電話號碼"+'</p>');
+	}
+}
+
+function isBusi(str,num){
+	if (str.search(/^\d{8}$/) != -1){
+		$("#busi_alert_text"+num).remove();
+		return true;
+	}
+	else{
+		$("#busi_alert_text"+num).remove();
+		$("#busi_box"+num).append('<p id="busi_alert_text'+num+'" style="color:red;">請輸入有效統編</p>');
+	}
+}
+
+function isLotNumber(str,num){
+	if (str.search(/^[A-Za-z0-9]+$/) != -1){
+		$("#lot_alert_text"+num).remove();
+		return true;
+	}
+	else{
+		$("#lot_alert_text"+num).remove();
+		$("#lot_box"+num).append('<p id="lot_alert_text'+num+'" style="color:red;">請輸入有效批號</p>');
+	}
+}
+
+$(".required_s").prepend("<span style='color:red;'>*</span>");
+
+//create pdf
+function gacp_pdf(){
+	if (!searched_flag){
+		Swal.fire({
+			icon: 'error',
+			title: '請先查詢GACP',
+			text: '查詢後請勿改變編號選擇器'
+		})
+		return ;
+	}else{
+		Swal.fire({
+			icon: 'question',
+			title: '是否要下載pdf',
+			text: '檔案下載需要等待一定時間',
+			showCancelButton: true,
+			confirmButtonColor: '#3085d6',
+			cancelButtonColor: '#d33',
+			confirmButtonText: '確認',
+			cancelButtonText: '取消'
+		}).then(function(result){
+			if (!result.value){
+				return ;
+			}else{
+				$.ajax({
+					url: "/static/pdf_font/MingLiU-01-normal.js",
+					dataType: "script",
+					beforeSend: function(xhr){
+						Swal.fire({
+							title: '下載中',
+							html:
+							`<h4 class="pdf_progress_title">正在加載字型</h4>
+							<div class="pdf_progress_box">
+								<div class="pdf_progress_under text-center">
+									<div class="pdf_progress_bar"></div>
+								</div>
+							</div>`
+						})
+						$(".pdf_progress_bar").animate({width:"90%"},8000)
+					},
+					success: function(data){
+						$(".pdf_progress_title").text("匯入GACP資料")
+					},
+					error: function(e){
+						Swal.close()
+						Swal.fire({
+							icon: 'error',
+							title: '字型加載失敗',
+							text: '請聯絡管理員'
+						})
+					}
+				}).then(function(data){
+					var doc = new jsPDF();
+					doc.setFont('MingLiU-01')
+					var gacp_no = $("#gacp_no option:selected").val()
+
+					$.ajax({
+						type:'GET',
+						url:`/api/gacp_pdf_farminfo?gacp_no=${gacp_no}`,
+						error:function(e){
+								Swal.close()
+								Swal.fire({
+								icon: 'error',
+								title: '找不到對應GACP',
+								text: '請確認GACP編號正確'
+							})
+						}
+					}).then(function(data){	
+						var base_info = data
+						var page_counter = 1
+						var fert_dict = new Map()
+						var prev_dict = new Map()
+					//base info
+						doc.setFontSize(16)
+						doc.text(10, 20, '基本資料');
+						doc.setFontSize(12)
+						doc.rect(5,23,43,15);doc.rect(48,23,112,15);doc.rect(160,23,40,60);
+						doc.rect(5,38,43,15);doc.rect(48,38,112,15);//                   //
+						doc.rect(5,53,43,15);doc.rect(48,53,112,15);//                   //
+						doc.rect(5,68,43,15);doc.rect(48,68,112,15);///////////////////////
+						doc.rect(5,83,43,15);doc.rect(48,83,152,15);
+						doc.rect(5,98,43,15);doc.rect(48,98,152,15);
+						doc.rect(5,113,20,15);doc.rect(25,113,87.5,15);doc.rect(112.5,113,87.5,15);
+						doc.rect(5,128,20,15);doc.rect(25,128,87.5,15);doc.rect(112.5,128,87.5,15);
+						doc.rect(5,143,20,15);doc.rect(25,143,87.5,15);doc.rect(112.5,143,87.5,15);
+						doc.rect(5,158,20,15);doc.rect(25,158,87.5,15);doc.rect(112.5,158,87.5,15);
+						doc.rect(5,173,20,15);doc.rect(25,173,87.5,15);doc.rect(112.5,173,87.5,15);
+						doc.rect(5,188,20,15);doc.rect(25,188,87.5,15);doc.rect(112.5,188,87.5,15);
+						doc.rect(5,203,20,15);doc.rect(25,203,87.5,15);doc.rect(112.5,203,87.5,15);
+						doc.rect(5,218,43,15);doc.rect(48,218,152,15);
+						doc.text(167, 52,　`2吋正面照片`);
+						doc.text(10, 30,　`生產履歷編號`);
+						doc.text(50, 30,　`${base_info.re_tgap_no}`);
+						doc.text(10, 45,　`單位/農場名稱`);
+						doc.text(50, 45,　`${base_info.re_farm_name}`);
+						doc.text(10, 60,　`經營農戶姓名`);
+						doc.text(50, 60,　`${base_info.re_farm_user}`);
+						doc.text(10, 75,　`聯絡電話`);
+						doc.text(50, 75,　`${base_info.re_tel_no}`);
+						doc.text(10, 90,　`住址/農場地址`);
+						doc.text(50, 90,　`${base_info.re_farm_addr}`);
+						doc.text(10, 105,　`栽培總面積`);
+						doc.text(50, 105,　`${base_info.re_farm_area} 公頃`);
+						doc.text(10, 120,　`編號`);
+						doc.text(50, 120,　`農地地籍號碼`);
+						doc.text(148, 120,　`面積`);
+						doc.text(15, 135,　`1`);
+						doc.text(15, 150,　`2`);
+						doc.text(15, 165,　`3`);
+						doc.text(15, 180,　`4`);
+						doc.text(15, 195,　`5`);
+						doc.text(15, 210,　`6`);
+						if (base_info.re_cadastral){
+							doc.text(30, 135,　`${base_info.re_city}${base_info.re_town} ${base_info.re_cadastral}`);
+						}else{
+							doc.text(30, 135,　`${base_info.re_city}${base_info.re_town}      段      小段      號`);
+						}
+						doc.text(143, 135, `${base_info.re_field_area} 公頃`);
+						doc.text(30, 150,　`      市鎮鄉      段      小段      號`);
+						doc.text(30, 165,　`      市鎮鄉      段      小段      號`);
+						doc.text(30, 180,　`      市鎮鄉      段      小段      號`);
+						doc.text(30, 195,　`      市鎮鄉      段      小段      號`);
+						doc.text(30, 210,　`      市鎮鄉      段      小段      號`);
+						doc.text(190, 150,　`公頃`);
+						doc.text(190, 165,　`公頃`);
+						doc.text(190, 180,　`公頃`);
+						doc.text(190, 195,　`公頃`);
+						doc.text(190, 210,　`公頃`);
+						doc.text(10, 225,　`備註`);
+						doc.text(97,293,'page '+ page_counter);
+						page_counter+=1
+
+					//seeding source
+						var SRF = query_data.SEED_REGIS_FORM
+						var SRF_rows = 11
+						for(var SRF_offset=0; SRF_offset<Math.ceil(SRF.length/SRF_rows); SRF_offset++){
+							doc.addPage()
+							doc.setFontSize(16)
+							doc.text(10, 20, '種子(苗)登記表');
+							doc.setFontSize(12)
+							var SRF_rows_offset = SRF_offset*SRF_rows
+							for(var row_cnt=0; row_cnt<Math.min(SRF.length-SRF_rows_offset,SRF_rows); row_cnt++){
+								var table_top_margin = 23+24*row_cnt
+								var SRF_item = SRF[row_cnt+SRF_rows_offset]
+								doc.rect(5,table_top_margin,65,24);
+								doc.text(10, table_top_margin+5,　`栽培品種：`);
+								doc.text(10, table_top_margin+17,　`或商品名：`);
+								let item_name_frags = jspdf_word_break(SRF_item.inm,16)
+								for(let frag_cnt=0; frag_cnt<item_name_frags.length; frag_cnt++){
+									doc.text(32, table_top_margin+5*(frag_cnt+1),　`${item_name_frags[frag_cnt]}`)
+								}
+								doc.rect(70,table_top_margin,50,24);
+								doc.text(75, table_top_margin+5,　`種子(苗)來源：`);
+								let sup_name_frags = jspdf_word_break(SRF_item.snm,18)
+								for(let frag_cnt=0; frag_cnt<sup_name_frags.length; frag_cnt++){
+									if(sup_name_frags[frag_cnt] == "--"){
+										sup_name_frags[frag_cnt] = "自培育種"
+									}
+									doc.text(75, table_top_margin+5*(frag_cnt+1)+8,　`${sup_name_frags[frag_cnt]}`)
+								}
+								doc.rect(120,table_top_margin,50,24);
+								doc.text(125, table_top_margin+5,　`購入日期：`);
+								if(SRF_item.pd){
+									doc.text(125, table_top_margin+13,　`${SRF_item.pd}`)
+								}else{
+									doc.text(125, table_top_margin+13,　`自培育種`)
+								}
+								doc.rect(170,table_top_margin,30,24);
+								doc.text(175, table_top_margin+5,　`數量：`);
+								if(SRF_item.squ.search("公斤") != -1){
+									SRF_item.squ = "公斤"
+								}
+								doc.text(175, table_top_margin+13,　`${SRF_item.sq}${SRF_item.squ}`);
+							}
+							doc.text(97,293,'page '+ page_counter);
+							page_counter+=1
+						}
+					
+					//cultivar work
+						var CWR = query_data.CULT_WORK_RECORD
+						var CWR_rows = 14
+						var CWR_rows_height = 18
+						for(var CWR_offset=0; CWR_offset<Math.ceil(CWR.length/CWR_rows); CWR_offset++){
+							var CWR_rows_offset = CWR_offset*CWR_rows
+							doc.addPage()
+							doc.setFontSize(16)
+							doc.text(10,20,'栽培工作紀錄');
+							doc.setFontSize(12)
+							doc.rect(5,23,25,12);
+							doc.text(10,28,`紀錄項目`);
+							doc.rect(30,23,25,12);
+							doc.text(35,28,`作業日期`);
+							doc.rect(55,23,50,12);
+							doc.text(60,28,`作業內容`);
+							doc.rect(105,23,95,12);
+							doc.text(110,28,`備註`);
+							for(var row_cnt=0; row_cnt<Math.min(CWR.length-CWR_rows_offset,CWR_rows); row_cnt++){
+								var table_top_margin = 35+CWR_rows_height*row_cnt
+								var record_type = {1:"耕地管理",2:"育苗/種植",3:"栽培管理",9:"其他"}
+								var CWR_item = CWR[row_cnt+CWR_rows_offset]
+								doc.rect(5,table_top_margin,25,CWR_rows_height);
+								doc.text(10,table_top_margin+10,`${record_type[Math.floor(CWR_item.rio/10000)]}`);
+								doc.rect(30,table_top_margin,25,CWR_rows_height);
+								doc.text(32,table_top_margin+10,`${CWR_item.wd}`);
+								doc.rect(55,table_top_margin,50,CWR_rows_height);
+								doc.text(57,table_top_margin+10,`${CWR_item.ri}`);
+								doc.rect(105,table_top_margin,95,CWR_rows_height);
+								let memo_frags = jspdf_word_break(CWR_item.mm,42)
+								for(let frag_cnt=0; frag_cnt<memo_frags.length; frag_cnt++){
+									doc.text(110,table_top_margin+5*(frag_cnt+1),`${memo_frags[frag_cnt]}`);
+								}
+							}
+							doc.text(97,293,'page '+ page_counter);
+							page_counter+=1
+						}
+
+					//fertilize purchase
+						var FPR = query_data.FERT_PURCH_RECORD
+						var FPR_rows = 12
+						var FPR_rows_height = 21
+						for(var FPR_offset=0; FPR_offset<Math.ceil(FPR.length/FPR_rows); FPR_offset++){
+							var FPR_rows_offset = FPR_offset*FPR_rows
+							doc.addPage()
+							doc.setFontSize(16)
+							doc.text(10,20,'肥料採購紀錄');
+							doc.setFontSize(12)
+							doc.rect(5,23,25,12);
+							doc.text(9,30,`採購日期`);
+							doc.rect(30,23,20,12);
+							doc.text(31,30,`資材代碼`);
+							doc.rect(50,23,20,12);
+							doc.text(51,30,`資材批號`);
+							doc.rect(70,23,25,12);
+							doc.text(78,30,`廠牌`);
+							doc.rect(95,23,25,12);
+							doc.text(101,30,`供應商`);
+							doc.rect(120,23,25,12);
+							doc.text(123,30,`單價/單位`);
+							doc.rect(145,23,15,12);
+							doc.text(148,30,`數量`);
+							doc.rect(160,23,20,12);
+							doc.text(166,30,`小計`);
+							doc.rect(180,23,25,12);
+							doc.text(188,30,`備註`);
+							for(var row_cnt=0; row_cnt<Math.min(FPR.length-FPR_rows_offset,FPR_rows); row_cnt++){
+								var table_top_margin = 35+FPR_rows_height*row_cnt
+								var FPR_item = FPR[row_cnt+FPR_rows_offset]
+								doc.rect(5,table_top_margin,25,FPR_rows_height);
+								doc.text(7,table_top_margin+10,`${FPR_item.pd}`);
+								doc.rect(30,table_top_margin,20,FPR_rows_height);
+								doc.text(33,table_top_margin+10,`F-${FPR_item.no}`);
+								doc.rect(50,table_top_margin,20,FPR_rows_height);
+								let loot_frags = jspdf_word_break(FPR_item.mn,6)
+								for(let frag_cnt=0; frag_cnt<loot_frags.length; frag_cnt++){
+									doc.text(51,table_top_margin+5*(frag_cnt+1),`${loot_frags[frag_cnt]}`);
+								}
+								doc.rect(70,table_top_margin,25,FPR_rows_height);
+								let label_frags = jspdf_word_break(FPR_item.mc,10)
+								for(let frag_cnt=0; frag_cnt<label_frags.length; frag_cnt++){
+									doc.text(71,table_top_margin+5*(frag_cnt+1),`${label_frags[frag_cnt]}`);//label
+								}
+								doc.rect(95,table_top_margin,25,FPR_rows_height);
+								let sup_frags = jspdf_word_break(FPR_item.lb,10)//sup FPR_item.lb not wrong
+								for(let frag_cnt=0; frag_cnt<sup_frags.length; frag_cnt++){
+									doc.text(96,table_top_margin+5*(frag_cnt+1),`${sup_frags[frag_cnt]}`);
+								}
+								doc.rect(120,table_top_margin,25,FPR_rows_height);
+								doc.text(121,table_top_margin+10,`${FPR_item.pr}`);
+								doc.text(134,table_top_margin+16,`/${FPR_item.qu}`);
+								doc.rect(145,table_top_margin,15,FPR_rows_height);
+								doc.text(146,table_top_margin+10,`${FPR_item.qt}`);
+								doc.rect(160,table_top_margin,20,FPR_rows_height);
+								doc.text(161,table_top_margin+10,`${FPR_item.st}`);
+								doc.rect(180,table_top_margin,25,FPR_rows_height);
+								let memo_frags = jspdf_word_break(FPR_item.mm,10)
+								for(let frag_cnt=0; frag_cnt<memo_frags.length; frag_cnt++){
+									doc.text(181,table_top_margin+5*(frag_cnt+1),`${memo_frags[frag_cnt]}`);
+								}
+								fert_dict.set(`F-${FPR_item.no}`,FPR_item.mc)
+							}
+							doc.text(97,293,'page '+ page_counter);
+							page_counter+=1
+						}
+					//fertilize work
+						var FCR = query_data.FERT_CONS_RECORD
+						var FCR_rows = 14
+						var FCR_rows_height = 18
+						for(var FCR_offset=0; FCR_offset<Math.ceil(FCR.length/FCR_rows); FCR_offset++){
+							var FCR_rows_offset = FCR_offset*FCR_rows
+							doc.addPage()
+							doc.setFontSize(16)
+							doc.text(10,20,'肥料施用紀錄');
+							doc.setFontSize(12)
+							doc.rect(5,23,20,12);
+							doc.text(8,30,`施肥別`);
+							doc.rect(25,23,25,12);
+							doc.text(29,30,`施用日期`);
+							doc.rect(50,23,20,12);
+							doc.text(51,30,`資材代碼`);
+							doc.rect(70,23,25,12);
+							doc.text(78,30,`廠牌`);
+							doc.rect(95,23,20,12);
+							doc.text(96.5,30,`資材批號`);
+							doc.rect(115,23,30,12);
+							doc.text(118,30,`施用量(公斤)`);
+							doc.rect(145,23,55,12);
+							doc.text(148,30,`備註`);
+							for(var row_cnt=0; row_cnt<Math.min(FCR.length-FCR_rows_offset,FCR_rows); row_cnt++){
+								var table_top_margin = 35+FCR_rows_height*row_cnt
+								var FCR_item = FCR[row_cnt+FCR_rows_offset]
+								doc.rect(5,table_top_margin,20,FCR_rows_height);
+								doc.text(7,table_top_margin+10,`${FCR_item.fc}`);
+								doc.rect(25,table_top_margin,25,FCR_rows_height);
+								doc.text(26,table_top_margin+10,`${FCR_item.fd}`);
+								doc.rect(50,table_top_margin,20,FCR_rows_height);
+								doc.text(52,table_top_margin+10,`F-${FCR_item.ino2}`);
+								doc.rect(70,table_top_margin,25,FCR_rows_height);
+								let label_frags = jspdf_word_break(FCR_item.ino1,10)
+								for(let frag_cnt=0; frag_cnt<label_frags.length; frag_cnt++){
+									doc.text(71,table_top_margin+5*(frag_cnt+1),`${label_frags[frag_cnt]}`);//label
+								}
+								doc.rect(95,table_top_margin,20,FCR_rows_height);
+								let loot_frags = jspdf_word_break(FCR_item.ln,6)
+								for(let frag_cnt=0; frag_cnt<loot_frags.length; frag_cnt++){
+									doc.text(97,table_top_margin+5*(frag_cnt+1),`${loot_frags[frag_cnt]}`);
+								}
+								doc.rect(115,table_top_margin,30,FCR_rows_height);
+								doc.text(117,table_top_margin+10,`${FCR_item.sq}`);
+								doc.rect(145,table_top_margin,55,FCR_rows_height);
+								let memo_frags = jspdf_word_break(FCR_item.mm,22)
+								for(let frag_cnt=0; frag_cnt<memo_frags.length; frag_cnt++){
+									doc.text(147,table_top_margin+5*(frag_cnt+1),`${memo_frags[frag_cnt]}`);
+								}
+							}
+							doc.text(97,293,'page '+ page_counter);
+							page_counter+=1
+						}
+					//prevent purchase
+						var PPR = query_data.PREVE_PURCH_RECORD
+						var PPR_rows = 12
+						var PPR_rows_height = 21
+						for(var PPR_offset=0; PPR_offset<Math.ceil(PPR.length/PPR_rows); PPR_offset++){
+							var PPR_rows_offset = PPR_offset*PPR_rows
+							doc.addPage()
+							doc.setFontSize(16)
+							doc.text(10,20,'病蟲草害防治資材採購紀錄');
+							doc.setFontSize(12)
+							doc.rect(5,23,25,12);
+							doc.text(9,30,`採購日期`);
+							doc.rect(30,23,20,12);
+							doc.text(31,30,`資材代碼`);
+							doc.rect(50,23,20,12);
+							doc.text(51,30,`資材批號`);
+							doc.rect(70,23,25,12);
+							doc.text(78,30,`廠牌`);
+							doc.rect(95,23,25,12);
+							doc.text(101,30,`供應商`);
+							doc.rect(120,23,25,12);
+							doc.text(123,30,`單價/單位`);
+							doc.rect(145,23,15,12);
+							doc.text(148,30,`數量`);
+							doc.rect(160,23,20,12);
+							doc.text(166,30,`小計`);
+							doc.rect(180,23,25,12);
+							doc.text(188,30,`備註`);
+							for(var row_cnt=0; row_cnt<Math.min(PPR.length-PPR_rows_offset,PPR_rows); row_cnt++){
+								var table_top_margin = 35+PPR_rows_height*row_cnt
+								var PPR_item = PPR[row_cnt+PPR_rows_offset]
+								doc.rect(5,table_top_margin,25,PPR_rows_height);
+								doc.text(7,table_top_margin+10,`${PPR_item.pd}`);
+								doc.rect(30,table_top_margin,20,PPR_rows_height);
+								doc.text(33,table_top_margin+10,`P-${PPR_item.no}`);
+								doc.rect(50,table_top_margin,20,PPR_rows_height);
+								let loot_frags = jspdf_word_break(PPR_item.mn,6)
+								for(let frag_cnt=0; frag_cnt<loot_frags.length; frag_cnt++){
+									doc.text(51,table_top_margin+5*(frag_cnt+1),`${loot_frags[frag_cnt]}`);
+								}
+								doc.rect(70,table_top_margin,25,PPR_rows_height);
+								let label_frags = jspdf_word_break(PPR_item.mc,10)
+								for(let frag_cnt=0; frag_cnt<label_frags.length; frag_cnt++){
+									doc.text(71,table_top_margin+5*(frag_cnt+1),`${label_frags[frag_cnt]}`);//label
+								}
+								doc.rect(95,table_top_margin,25,PPR_rows_height);
+								let sup_frags = jspdf_word_break(PPR_item.lb,10)//sup PPR_item.lb not wrong
+								for(let frag_cnt=0; frag_cnt<sup_frags.length; frag_cnt++){
+									doc.text(96,table_top_margin+5*(frag_cnt+1),`${sup_frags[frag_cnt]}`);
+								}
+								doc.rect(120,table_top_margin,25,PPR_rows_height);
+								doc.text(121,table_top_margin+10,`${PPR_item.pr}`);
+								doc.text(134,table_top_margin+16,`/${PPR_item.qu}`);
+								doc.rect(145,table_top_margin,15,PPR_rows_height);
+								doc.text(146,table_top_margin+10,`${PPR_item.qt}`);
+								doc.rect(160,table_top_margin,20,PPR_rows_height);
+								doc.text(161,table_top_margin+10,`${PPR_item.st}`);
+								doc.rect(180,table_top_margin,25,PPR_rows_height);
+								let memo_frags = jspdf_word_break(PPR_item.mm,10)
+								for(let frag_cnt=0; frag_cnt<memo_frags.length; frag_cnt++){
+									doc.text(181,table_top_margin+5*(frag_cnt+1),`${memo_frags[frag_cnt]}`);
+								}
+								prev_dict.set(`F-${PPR_item.no}`,PPR_item.mc)
+							}
+							doc.text(97,293,'page '+ page_counter);
+							page_counter+=1
+						}
+					//prevent work
+						var PDR = query_data.PESTS_DISEASES_RECORD
+						var PDR_rows = 12
+						var PDR_rows_height = 21
+						for (var PDR_offset = 0; PDR_offset < Math.ceil(PDR.length / PDR_rows); PDR_offset++) {
+							var PDR_rows_offset = PDR_offset * PDR_rows
+							doc.addPage()
+							doc.setFontSize(16)
+							doc.text(10, 20, '病蟲草害防制資材施用紀錄');
+							doc.setFontSize(12)
+							doc.rect(5, 23, 25, 12);
+							doc.text(6, 30, `施用日期`);
+							doc.rect(30, 23, 20, 12);
+							doc.text(31, 30, `防治對象`);
+							doc.rect(50, 23, 20, 12);
+							doc.text(51, 30, `資材代碼`);
+							doc.rect(70, 23, 25, 12);
+							doc.text(78, 30, `廠牌`);
+							doc.rect(95, 23, 20, 12);
+							doc.text(96.5, 30, `資材批號`);
+							doc.rect(115, 23, 30, 12);
+							doc.text(118, 30, `施用量(公斤)`);
+							doc.rect(145, 23, 20, 12);
+							doc.text(147, 30, `稀釋倍數`);
+							doc.rect(165, 23, 35, 12);
+							doc.text(169, 30, `備註`);
+							for (var row_cnt = 0; row_cnt < Math.min(PDR.length - PDR_rows_offset, PDR_rows); row_cnt++) {
+								var table_top_margin = 35 + PDR_rows_height * row_cnt
+								var PDR_item = PDR[row_cnt + PDR_rows_offset]
+								doc.rect(5, table_top_margin, 25, PDR_rows_height);
+								doc.text(7, table_top_margin + 10, `${PDR_item.fd}`);
+								doc.rect(30, table_top_margin, 20, PDR_rows_height);
+								let pest_frags = jspdf_word_break(PDR_item.coc, 7)
+								for (let frag_cnt = 0; frag_cnt < pest_frags.length; frag_cnt++) {
+									doc.text(31, table_top_margin + 5 * (frag_cnt + 1), `${pest_frags[frag_cnt]}`);
+								}
+								doc.rect(50, table_top_margin, 20, PDR_rows_height);
+								doc.text(52, table_top_margin + 10, `P-${PDR_item.ino2}`);
+								doc.rect(70, table_top_margin, 25, PDR_rows_height);
+								let label_frags = jspdf_word_break(PDR_item.ino1, 10)
+								for (let frag_cnt = 0; frag_cnt < label_frags.length; frag_cnt++) {
+									doc.text(71, table_top_margin + 5 * (frag_cnt + 1), `${label_frags[frag_cnt]}`);//label
+								}
+								doc.rect(95, table_top_margin, 20, PDR_rows_height);
+								let loot_frags = jspdf_word_break(PDR_item.ln, 6)
+								for (let frag_cnt = 0; frag_cnt < loot_frags.length; frag_cnt++) {
+									doc.text(97, table_top_margin + 5 * (frag_cnt + 1), `${loot_frags[frag_cnt]}`);
+								}
+								doc.rect(115, table_top_margin, 30, PDR_rows_height);
+								doc.text(117, table_top_margin + 10, `${PDR_item.aq}`);
+								doc.rect(145, table_top_margin, 20, PDR_rows_height);
+								doc.text(147, table_top_margin + 10, `${PDR_item.dr}`);
+								doc.rect(165, table_top_margin, 35, PDR_rows_height);
+								let memo_frags = jspdf_word_break(PDR_item.pm, 15)
+								for (let frag_cnt = 0; frag_cnt < memo_frags.length; frag_cnt++) {
+									doc.text(166, table_top_margin + 5 * (frag_cnt + 1), `${memo_frags[frag_cnt]}`);
+								}
+							}
+							doc.text(97, 293, `page ${page_counter}`);
+							page_counter += 1
+						}
+
+						//harvest record
+						var HR = query_data.HARVEST_RECORD.filter(obj => obj.gc != obj.sc)//exclude tatal production
+						var HR_rows = 14
+						var HR_rows_height = 18
+						for (var HR_offset = 0; HR_offset < Math.ceil(HR.length / HR_rows); HR_offset++) {
+							var HR_rows_offset = HR_offset * HR_rows
+							doc.addPage()
+							doc.setFontSize(16)
+							doc.text(10, 20, '採收及採收後處理紀錄');
+							doc.setFontSize(12)
+							doc.rect(5, 23, 25, 12);
+							doc.text(8, 30, `採收日期`);
+							doc.rect(30, 23, 30, 12);
+							doc.text(32, 30, `採收量(公斤)`);
+							doc.rect(60, 23, 60, 6);
+							doc.text(75, 27, `採收後作業內容`);
+							doc.rect(60, 29, 30, 6);
+							doc.text(70, 33, `分級`);
+							doc.rect(90, 29, 30, 6);
+							doc.text(97, 33, `儲藏方式`);
+							doc.rect(120, 23, 80, 12);
+							doc.text(125, 30, `備註`);
+							for (var row_cnt = 0; row_cnt < Math.min(HR.length - HR_rows_offset, HR_rows); row_cnt++) {
+								var table_top_margin = 35 + HR_rows_height * row_cnt
+								var HR_item = HR[row_cnt + HR_rows_offset]
+								doc.rect(5, table_top_margin, 25, HR_rows_height);
+								doc.text(8, table_top_margin + 10, `${HR_item.wd}`);
+								doc.rect(30, table_top_margin, 30, HR_rows_height);
+								doc.text(33, table_top_margin + 10, `${HR_item.sq}`);
+								doc.rect(60, table_top_margin, 30, HR_rows_height);
+								doc.text(63, table_top_margin + 10, `${HR_item.gc}`);
+								doc.rect(90, table_top_margin, 30, HR_rows_height);
+								doc.text(93, table_top_margin + 10, `${HR_item.sc}`);
+								doc.rect(120, table_top_margin, 80, HR_rows_height);
+								let memo_frags = jspdf_word_break(HR_item.wm, 36)
+								for (let frag_cnt = 0; frag_cnt < memo_frags.length; frag_cnt++) {
+									doc.text(122, table_top_margin + 5 * (frag_cnt + 1), `${memo_frags[frag_cnt]}`);
+								}
+							}
+
+							doc.text(97, 293, `page ${page_counter}`);
+							page_counter += 1
+						}
+
+						//transaction record
+						var SR = query_data.SHIPPMENT_RECORD
+						var SR_rows = 10
+						var SR_rows_height = 25
+						for (var SR_offset = 0; SR_offset < Math.ceil(SR.length / SR_rows); SR_offset++) {
+							var SR_rows_offset = SR_offset * SR_rows
+							doc.addPage()
+							doc.setFontSize(16)
+							doc.text(10, 20, '出貨紀錄');
+							doc.setFontSize(12)
+							doc.rect(5, 23, 25, 12);
+							doc.text(8, 30, `出貨日期`);
+							doc.rect(30, 23, 25, 12);
+							doc.text(33, 30, `採收日期`);
+							doc.rect(55, 23, 20, 12);
+							doc.text(57, 30, `銷售對象`);
+							doc.rect(75, 23, 20, 12);
+							doc.text(77, 27, `出貨重量`);
+							doc.text(79, 33, `(公斤)`);
+							doc.rect(95, 23, 20, 12);
+							doc.text(97, 27, `包裝重量`);
+							doc.text(99, 33, `(公斤)`);
+							doc.rect(115, 23, 20, 12);
+							doc.text(117, 30, `銷售總額`);
+							doc.rect(135, 23, 20, 12);
+							doc.text(137, 27, `流水標章`);
+							doc.text(137, 33, `編號起訖`);
+							doc.rect(155, 23, 20, 12);
+							doc.text(157, 30, `產品等級`);
+							doc.rect(175, 23, 25, 12);
+							doc.text(180, 30, `備註`);
+							for (var row_cnt = 0; row_cnt < Math.min(SR.length - SR_rows_offset, SR_rows); row_cnt++) {
+								var table_top_margin = 35 + SR_rows_height * row_cnt
+								var SR_item = SR[row_cnt + SR_rows_offset]
+								doc.rect(5, table_top_margin, 25, SR_rows_height);
+								doc.text(7, table_top_margin + 10, `${SR_item.sd}`);
+								doc.rect(30, table_top_margin, 25, SR_rows_height);
+								doc.text(32, table_top_margin + 10, `${SR_item.hn}`);
+								doc.rect(55, table_top_margin, 20, SR_rows_height);
+								let customer_frags = jspdf_word_break(SR_item.ssi, 8)
+								for (let frag_cnt = 0; frag_cnt < customer_frags.length; frag_cnt++) {
+									doc.text(57, table_top_margin + 5 * (frag_cnt + 1), `${customer_frags[frag_cnt]}`);
+								}
+								doc.rect(75, table_top_margin, 20, SR_rows_height);
+								doc.text(77, table_top_margin + 10, `${SR_item.sqt}`);
+								doc.rect(95, table_top_margin, 20, SR_rows_height);
+								doc.text(97, table_top_margin + 10, `${SR_item.pqt}`);
+								doc.rect(115, table_top_margin, 20, SR_rows_height);
+								doc.text(117, table_top_margin + 10, `${SR_item.sa}`);
+								doc.rect(135, table_top_margin, 20, SR_rows_height);
+								let serial_frags = jspdf_word_break(SR_item.sfn, 8)
+								for (let frag_cnt = 0; frag_cnt < serial_frags.length; frag_cnt++) {
+									doc.text(137, table_top_margin + 5 * (frag_cnt + 1), `${serial_frags[frag_cnt]}`);
+								}
+								doc.rect(155, table_top_margin, 20, SR_rows_height);
+								doc.text(157, table_top_margin + 10, `${SR_item.ig}`);
+								doc.rect(175, table_top_margin, 25, SR_rows_height);
+								let memo_frags = jspdf_word_break(SR_item.mm, 10)
+								for (let frag_cnt = 0; frag_cnt < memo_frags.length; frag_cnt++) {
+									doc.text(177, table_top_margin + 5 * (frag_cnt + 1), `${memo_frags[frag_cnt]}`);
+								}
+							}
+
+							doc.text(97, 293, `page ${page_counter}`);
+							page_counter += 1
+						}
+
+						//fert code
+						var FC_rows = 14
+						var FC_rows_height = 18
+						var FC_iter_cnt = 0
+						var no_of_fert = fert_dict.size
+						for (var FC_offset = 0; FC_offset < Math.ceil(no_of_fert / (FC_rows*2)); FC_offset++) {
+							var FC_rows_offset = FC_offset * FC_rows
+							var FC_size = fert_dict.size
+							doc.addPage()
+							doc.setFontSize(16)
+							doc.text(10, 20, '肥料資材與代碼對照表');
+							doc.setFontSize(12)
+							doc.rect(5, 23, 25, 12);
+							doc.text(8, 30, `資材代碼`);
+							doc.rect(30, 23, 75, 12);
+							doc.text(58, 30, `資材名稱`);
+							doc.rect(105, 23, 25, 12);
+							doc.text(108, 30, `資材代碼`);
+							doc.rect(130, 23, 75, 12);
+							doc.text(158, 30, `資材名稱`);
+							const FC_iter = fert_dict[Symbol.iterator]();
+							page_loop:
+							for (let item of FC_iter) {
+								let table_top_margin = 35 + FC_rows_height * Math.floor(FC_iter_cnt/2)
+								let key = item[0]
+								let val = item[1]
+								if((FC_iter_cnt % 2) == 0){
+									doc.rect(5, table_top_margin, 25, FC_rows_height);
+									doc.text(7, table_top_margin + 10, key);
+									doc.rect(30, table_top_margin, 75, FC_rows_height);
+									let val_frags = jspdf_word_break(val, 33)
+									for (let frag_cnt = 0; frag_cnt < val_frags.length; frag_cnt++) {
+										doc.text(32, table_top_margin + 5 * (frag_cnt + 1), `${val_frags[frag_cnt]}`);
+									}
+								}else if((FC_iter_cnt % 2) != 0){
+									doc.rect(105, table_top_margin, 25, FC_rows_height);
+									doc.text(107, table_top_margin + 10, key);
+									doc.rect(130, table_top_margin, 75, FC_rows_height);
+									let val_frags = jspdf_word_break(val, 33)
+									for (let frag_cnt = 0; frag_cnt < val_frags.length; frag_cnt++) {
+										doc.text(132, table_top_margin + 5 * (frag_cnt + 1), `${val_frags[frag_cnt]}`);
+									}
+								}
+								fert_dict.delete(key)
+								FC_iter_cnt += 1
+								if(FC_iter_cnt == Math.min(2*FC_rows,FC_size)){
+									FC_iter_cnt = 0
+									break page_loop;
+								}
+							}
+
+							doc.text(97, 293, `page ${page_counter}`);
+							page_counter += 1
+						}
+						//prev code
+						var PC_rows = 14
+						var PC_rows_height = 18
+						var PC_iter_cnt = 0
+						var no_of_prev = prev_dict.size
+						for (var PC_offset = 0; PC_offset < Math.ceil(no_of_prev / (PC_rows*2)); PC_offset++) {
+							var PC_rows_offset = PC_offset * PC_rows
+							var PC_size = prev_dict.size
+							doc.addPage()
+							doc.setFontSize(16)
+							doc.text(10, 20, '病蟲草害防治資材與代碼對照表');
+							doc.setFontSize(12)
+							doc.rect(5, 23, 25, 12);
+							doc.text(8, 30, `資材代碼`);
+							doc.rect(30, 23, 75, 12);
+							doc.text(58, 30, `資材名稱`);
+							doc.rect(105, 23, 25, 12);
+							doc.text(108, 30, `資材代碼`);
+							doc.rect(130, 23, 75, 12);
+							doc.text(158, 30, `資材名稱`);
+							const PC_iter = prev_dict[Symbol.iterator]();
+							page_loop:
+							for (let item of PC_iter) {
+								let table_top_margin = 35 + PC_rows_height * Math.floor(PC_iter_cnt/2)
+								let key = item[0]
+								let val = item[1]
+								if((PC_iter_cnt % 2) == 0){
+									doc.rect(5, table_top_margin, 25, PC_rows_height);
+									doc.text(7, table_top_margin + 10, key);
+									doc.rect(30, table_top_margin, 75, PC_rows_height);
+									let val_frags = jspdf_word_break(val, 33)
+									for (let frag_cnt = 0; frag_cnt < val_frags.length; frag_cnt++) {
+										doc.text(32, table_top_margin + 5 * (frag_cnt + 1), `${val_frags[frag_cnt]}`);
+									}
+								}else if((PC_iter_cnt % 2) != 0){
+									doc.rect(105, table_top_margin, 25, PC_rows_height);
+									doc.text(107, table_top_margin + 10, key);
+									doc.rect(130, table_top_margin, 75, PC_rows_height);
+									let val_frags = jspdf_word_break(val, 33)
+									for (let frag_cnt = 0; frag_cnt < val_frags.length; frag_cnt++) {
+										doc.text(132, table_top_margin + 5 * (frag_cnt + 1), `${val_frags[frag_cnt]}`);
+									}
+								}
+								prev_dict.delete(key)
+								PC_iter_cnt += 1
+								if(PC_iter_cnt == Math.min(2*PC_rows,PC_size)){
+									PC_iter_cnt = 0
+									break page_loop;
+								}
+							}
+
+							doc.text(97, 293, `page ${page_counter}`);
+							page_counter += 1
+						}
+						//other purchase
+						var OPR = query_data.OTHER_PURCH_RECORD
+						var OPR_rows = 12
+						var OPR_rows_height = 21
+						for (var OPR_offset = 0; OPR_offset < Math.ceil(OPR.length / OPR_rows); OPR_offset++) {
+							var OPR_rows_offset = OPR_offset * OPR_rows
+							doc.addPage()
+							doc.setFontSize(16)
+							doc.text(10, 20, '其他資材採購紀錄');
+							doc.setFontSize(12)
+							doc.rect(5, 23, 25, 12);
+							doc.text(9, 30, `採購日期`);
+							doc.rect(30, 23, 20, 12);
+							doc.text(31, 30, `資材代碼`);
+							doc.rect(50, 23, 20, 12);
+							doc.text(51, 30, `資材批號`);
+							doc.rect(70, 23, 25, 12);
+							doc.text(78, 30, `廠牌`);
+							doc.rect(95, 23, 25, 12);
+							doc.text(101, 30, `供應商`);
+							doc.rect(120, 23, 25, 12);
+							doc.text(123, 30, `單價/單位`);
+							doc.rect(145, 23, 15, 12);
+							doc.text(148, 30, `數量`);
+							doc.rect(160, 23, 20, 12);
+							doc.text(166, 30, `小計`);
+							doc.rect(180, 23, 25, 12);
+							doc.text(188, 30, `備註`);
+							for (var row_cnt = 0; row_cnt < Math.min(OPR.length - OPR_rows_offset, OPR_rows); row_cnt++) {
+								var table_top_margin = 35 + OPR_rows_height * row_cnt
+								var OPR_item = OPR[row_cnt + OPR_rows_offset]
+								doc.rect(5, table_top_margin, 25, OPR_rows_height);
+								doc.text(7, table_top_margin + 10, `${OPR_item.pd}`);
+								doc.rect(30, table_top_margin, 20, OPR_rows_height);
+								doc.text(33, table_top_margin + 10, `O-${OPR_item.no}`);
+								doc.rect(50, table_top_margin, 20, OPR_rows_height);
+								let loot_frags = jspdf_word_break(OPR_item.mn, 6)
+								for (let frag_cnt = 0; frag_cnt < loot_frags.length; frag_cnt++) {
+									doc.text(51, table_top_margin + 5 * (frag_cnt + 1), `${loot_frags[frag_cnt]}`);
+								}
+								doc.rect(70, table_top_margin, 25, OPR_rows_height);
+								let label_frags = jspdf_word_break(OPR_item.mc, 10)
+								for (let frag_cnt = 0; frag_cnt < label_frags.length; frag_cnt++) {
+									doc.text(71, table_top_margin + 5 * (frag_cnt + 1), `${label_frags[frag_cnt]}`);//label
+								}
+								doc.rect(95, table_top_margin, 25, OPR_rows_height);
+								let sup_frags = jspdf_word_break(OPR_item.lb, 10)//sup FPR_item.lb not wrong
+								for (let frag_cnt = 0; frag_cnt < sup_frags.length; frag_cnt++) {
+									doc.text(96, table_top_margin + 5 * (frag_cnt + 1), `${sup_frags[frag_cnt]}`);
+								}
+								doc.rect(120, table_top_margin, 25, OPR_rows_height);
+								doc.text(121, table_top_margin + 10, `${OPR_item.pr}`);
+								doc.text(134, table_top_margin + 16, `/${OPR_item.qu}`);
+								doc.rect(145, table_top_margin, 15, OPR_rows_height);
+								doc.text(146, table_top_margin + 10, `${OPR_item.qt}`);
+								doc.rect(160, table_top_margin, 20, OPR_rows_height);
+								doc.text(161, table_top_margin + 10, `${OPR_item.st}`);
+								doc.rect(180, table_top_margin, 25, OPR_rows_height);
+								let memo_frags = jspdf_word_break(OPR_item.mm, 10)
+								for (let frag_cnt = 0; frag_cnt < memo_frags.length; frag_cnt++) {
+									doc.text(181, table_top_margin + 5 * (frag_cnt + 1), `${memo_frags[frag_cnt]}`);
+								}
+							}
+							doc.text(97, 293, `page ${page_counter}`);
+							page_counter += 1
+						}
+
+						for (var PRD_offset = 0; PRD_offset < prd_urls.length; PRD_offset++) {
+							var PRD_item = prd_urls[PRD_offset]
+							doc.addPage()
+							doc.setFontSize(16)
+							doc.text(10, 20, '各種檢驗分析表');
+							doc.setFontSize(12)
+							let temp_image = new Image()
+							temp_image.src = PRD_item
+							doc.addImage(temp_image,'JPG',15, 40, 180, 240)
+							doc.text(97, 293, `page ${page_counter}`)
+							page_counter += 1
+						}
+
+						for (var OII_offset = 0; OII_offset < oii_urls.length; OII_offset++) {
+							var OII_item = oii_urls[OII_offset]
+							doc.addPage()
+							doc.setFontSize(16)
+							doc.text(10, 20, '各種檢驗分析表');
+							doc.setFontSize(12)
+							let temp_image = new Image()
+							temp_image.src = OII_item
+							doc.addImage(temp_image,'JPG',15, 40, 180, 240)
+							doc.text(97, 293, `page ${page_counter}`)
+							page_counter += 1
+						}
+						
+						//other notes
+						var ON = query_data.OTHER_NOTES
+						var ON_rows = 5
+						var ON_rows_height = 50
+						for (var ON_offset = 0; ON_offset < Math.ceil(ON.length / ON_rows); ON_offset++) {
+							var ON_rows_offset = ON_offset * ON_rows
+							doc.addPage()
+							doc.setFontSize(16)
+							doc.text(10, 20, `其他記事`);
+							doc.setFontSize(12)
+							doc.rect(5, 23, 40, 12);
+							doc.text(17, 30, `紀錄日期`);
+							doc.rect(45, 23, 160, 12);
+							doc.text(120, 30, `記事`);
+							for (var row_cnt = 0; row_cnt < Math.min(ON.length - ON_rows_offset, ON_rows); row_cnt++) {
+								var table_top_margin = 35 + ON_rows_height * row_cnt
+								var ON_item = ON[row_cnt + ON_rows_offset]
+								doc.rect(5, table_top_margin, 40, ON_rows_height);
+								doc.text(14, table_top_margin + 23, `${ON_item.od}`);
+								doc.rect(45, table_top_margin, 160, ON_rows_height);
+								let memo_frags = jspdf_word_break(ON_item.mm, 70)
+								for (let frag_cnt = 0; frag_cnt < memo_frags.length; frag_cnt++) {
+									doc.text(47, table_top_margin + 8 * (frag_cnt + 1), `${memo_frags[frag_cnt]}`);
+								}
+								
+							}
+
+							doc.text(97, 293, `page ${page_counter}`);
+							page_counter += 1
+						}
+						$(".pdf_progress_title").text("下載完成")
+						$(".pdf_progress_bar").animate({width:"100%"},500)
+						doc.save('gacp.pdf');
+
+					})
+				})
+			}
+		})
+	}
+}
+
+function jspdf_word_break(word,fragment_length) {
+	var len = 0;
+	var word_fragments = []
+	var break_point = 0
+	var len_buf = 0
+	if (!word){
+		return [""]
+	}
+	for (var i = 0; i < word.length; i++) {
+		var code = word.charCodeAt(i);
+		if (code <= 0x7f) {
+			len += 1;
+			len_buf += 1;
+		} else if (code <= 0x7ff) {
+			len += 2;
+			len_buf += 2;
+		} else if (code >= 0xd800 && code <= 0xdfff) {
+			len += 4; i++;
+			len_buf += 4;
+		} else if (code < 0xffff) {
+			len += 2;
+			len_buf += 2;
+		} else {
+			len += 4;
+			len_buf += 4;
+		}
+		if (len_buf>=fragment_length){
+			word_fragments.push(word.substring(break_point,i+1))
+			len_buf = 0
+			break_point = i+1
+		}
+	}
+	if((word.length-break_point)!=0){
+		word_fragments.push(word.substring(break_point,word.length))
+	}
+  return word_fragments;
+}
+
+</script>
+
+{% endblock %}

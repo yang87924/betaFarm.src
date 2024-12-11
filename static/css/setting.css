@@ -1,0 +1,95 @@
+textarea {
+    width:100%;
+    resize: none;
+    min-width: 100px;
+}
+
+#qrcode {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.gacp_management{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction:row;
+}
+
+.btn-gacp-management , .gacp_management_row , .field_management_row{
+    margin-top: 5px;
+    word-break: break-all;
+}
+
+.upload_gacp_image_button{
+    min-width: 50px;
+}
+
+.gacp_log_image{
+    min-width:150px;
+}
+
+.swal2-popup {
+    font-size: 1.6rem !important;
+}
+
+.upload_purchase_link, .link_ipcam_form ,.link_cwb{
+    display: flex;
+    justify-content: center;
+    flex-direction:row;
+}
+
+.tano-logo{
+    height:100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.tano-logo-img{
+    height:40px; 
+    margin-right:5px;
+}
+
+.tano-logo b{
+    font-size: 20px;
+    text-align: center;
+    line-height:100%;
+    white-space:pre-wrap;
+    color:#f7f7f7;
+}
+
+
+
+@media screen and (min-width: 768px) {
+    .trace-navbar{
+        margin-left: 0px !important;
+        display: flex;
+        justify-content: center;
+    }
+    .trace-logo-min{
+        display: none !important;
+    }
+}
+
+@media screen and (max-width: 767px) {
+    .tano-logo b{
+        font-size: 16px;
+        white-space:pre-wrap;
+    }
+}
+
+.tano-logo{
+    height:50px;
+    background-color:#007979 ;
+}
+
+.certificate_mark_small{
+    height:50px;
+    width:50px;
+}
+
+.mark_place_holder{
+    margin-top:40px;
+}

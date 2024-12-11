@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+{% include 'base/head.html' %}
+<link rel="stylesheet" href="/static/css/index.css">
+<body class="hold-transition skin-black-iot sidebar-mini">
+<div class="wrapper">
+  {% include 'base/header.html' %}
+
+	<!-- Content Wrapper. Contains page content -->
+  <div class="container">
+	<div class="content-wrapper">
+    <div class="row">
+      <div class="col-xs-12 title"><p>导览</p></div>
+      <div class="col-xs-6 text-center btn_description">
+        <button type="button" class="dop_btn btn btn-success btn-lg" style="width:90%;">直接操作</button>
+        <p>不事先指定作物，在输入的时候进行选择</p>
+      </div>
+      <div class="col-xs-6 text-center btn_description">
+        <button type="button" class="sel_btn btn btn-success btn-lg" style="width:90%;">指定作物</button>
+        <p>事先指定作物，在输入的时候预设为指定作物</p>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-12 sel_opt">
+        <section class="content">
+          <div class="nav-tabs-custom">
+          <select class="selectpicker" data-live-search="true" data-dropup-auto="false">
+            {% for fami,fami_val in lists.fami_list.items()%}
+              <optgroup label="{{fami_val.familia_name}}">
+              {% for crop,crop_val in lists.crop_list.items()%}
+                {% if crop_val.familia_no == fami_val.familia_no%}
+                  <option value="{{crop_val.crop_no}}">{{crop_val.crop_name}}</option>
+                {% endif %}
+              {% endfor%}
+              </optgroup>
+            {% endfor%}
+          </select>
+          <button type="button" class="chk_btn btn btn-success">确定</button>
+          </div>
+        </section>
+      </div>
+    </div>
+	</div>
+    {% include 'base/footer.html' %}
+</div>
+</div>
+<!-- ./wrapper -->
+{% include 'base/script.html' %}
+<script>
+$(".dop_btn").click(function(){
+  $.get("/api/crop_sel", {"val" : 1},function(req) {
+    window.location.href="/form/guide";
+  });
+})
+
+$(".sel_btn").click(function(){
+ $(".nav-tabs-custom").css("display","block");
+})
+
+$(".chk_btn").click(function(){
+  var val = $(".selectpicker option:selected").val();
+  var text = $(".selectpicker option:selected").text();
+  $.get("/api/crop_sel", {"val" : val},function(req) {
+    alert("选择了:"+text)
+    window.location.href="/form/guide";
+  });
+})
+
+</script>
+</body>
+</html>

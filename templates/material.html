@@ -1,0 +1,447 @@
+{% extends 'base/base.html' %} 
+
+{% block page_title %}資材一覽{% endblock %}
+
+
+{% block page_content %}
+<script type="text/x-template" id="material-table-template">
+</script>
+  <!-- TODO: combine MODAL -->
+  <div class="nav-tabs-custom" id="app">
+    <ul class="nav nav-tabs">
+      <li class="active" id="tab_farm">
+        <a href="#material_management" class="" data-toggle="tab">資材一覽</a>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+	  
+      <!-- FARM -->
+      <div class="tab-pane active" id="material_management">
+        <div class="row">
+          <div class="col-md-2"></div>
+          <div class="col-md-12">
+            <div class="box">
+              <!-- box-header -->
+              <div class="box-header with-border">
+                {% if is_superuser == 1 or is_superuser == 2 %}
+                  <button class="btn btn-success custom_add_button" @click="material_new">新增</button>
+                {% endif %}
+              </div>
+              <!-- /box-header -->
+
+              <!-- body table -->
+              <div class="box-body" style="overflow-x: auto;">
+                <p><b class="">搜尋</b>：<input name="key" type="text" id="key" class="" onkeydown="onSearch(this)" value=""  placeholder="請輸入關鍵字"/></td><p>
+                <table class="table table-bordered table-hover dataTable table-striped tablesorter" id="store">
+                  <thead>
+                    <tr>
+                      <th>資材編號 <i class='fa fa-sort'></i></th>
+                      <th>廠牌/資材名稱 <i class='fa fa-sort'></i></th>
+                      <th>廠商(製造商/代理商) <i class='fa fa-sort'></i></th>
+                      <th>類型 <i class='fa fa-sort'></i></th>
+                      <th>備註 <i class='fa fa-sort'></i></th>
+                    </tr>
+                  <thead>
+                  <tbody>
+                    <template v-for="(material, index) in materials" v-if="(index>2)">
+                      <tr>
+                        <td>
+                          <a href="#" @click="material_modify(index)">{{ '{{' }}material.item_no{{ '}}' }}</a>
+                        </td>
+                        <td>{{ '{{' }}material.item_name{{ '}}' }}</td>
+                        <td>{{ '{{' }}materials[1][material.sup_id]["sup_name"]{{ '}}' }}</td>
+                        <td>{{ '{{' }}materials[0][material.type_code]["type_name"]{{ '}}' }}</td>
+                        <td><textarea style="width:100%;" readonly="readonly">{{ '{{' }}material.memo{{ '}}' }}</textarea></td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+              <!-- /body table -->
+            </div>
+            {% include 'base/backtop.html' %}
+            <!-- /box -->
+          </div>
+        </div>
+        <!-- Modal -->
+        <div id="material_modal" class="modal fade" role="dialog">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" data-target="#material_modal">&times;</button>
+                <h4 class="modal-title">資材管理</h4>
+              </div>
+              <!-- form -->
+              <form class="form-horizontal">
+                <div class="modal-body">
+                  <!-- item_no -->
+                  <input type="hidden" class="sup-control" id="item_no" v-model="temp_material.item_no" disabled>
+                  <!-- item_name -->
+                  <div class="form-group">
+                    <label for="item_name" class="col-sm-2 control-label required_s">廠牌/資材名稱</label>
+                    <div class="col-sm-10">
+                      <input type="text" class="form-control" id="item_name" placeholder=""  v-model="temp_material.item_name" required>
+                    </div>
+                  </div>
+                  <!-- sup_id -->
+                  <div class="form-group">
+                    <label for="sup_id" class="col-sm-2 control-label required_s">廠商(製造商/代理商)</label>
+                    <div class="col-sm-10">
+                      <select class="form-control" id="sup_id" v-model="temp_material.sup_id">
+                        <option></option>
+                        <option v-for="sup in materials[1]" :value="sup['sup_id']">{{ '{{' }}sup['sup_name']{{ '}}' }}</option>
+                      </select>
+                      <br>
+                      <input class="search_select" type="text" oninput="search_select(this,'sup_id')" placeholder="可由此搜尋">
+                    </div>
+                  </div>
+                  <!-- type_code -->
+                  <div class="form-group type_code_box">
+                    <label for="type_code" class="col-sm-2 control-label required_s">類型</label>
+                    <div class="col-sm-10">
+                      <select class="form-control" id="type_code" v-model="temp_material.type_code" onchange="typecode_change()">
+                        <option></option>
+                        <option v-for="type in materials[0]" :value="type['type_code']">{{ '{{' }}type['type_name']{{ '}}' }}</option>
+                      </select>
+                    </div>
+                  </div>
+                  <!-- organic_material_no  -->
+                  <div class="form-group show_group_pest show_group_fert show_group_other hide_group">
+                    <label for="organic_material_no" class="col-sm-2 control-label required_s">商品化資材審查編號</label>
+                    <div class="col-sm-10">
+                      <input type="text" id="organic_material_no" v-model="temp_material.organic_material_no" class="form-control" placeholder="如:有機資審字第100000號">
+                    </div>
+                  </div>
+                  <!-- pest_reg_no  -->
+                  <div class="form-group show_group_pest hide_group">
+                    <label for="pest_reg_no" class="col-sm-2 control-label required_s">農藥許可證號碼/免登產品登錄字號</label>
+                    <div class="col-sm-10">
+                      <input type="text" id="pest_reg_no" v-model="temp_material.pest_reg_no" class="form-control" placeholder="如:農藥製字第00000號">
+                    </div>
+                  </div>
+                  <!-- fert_type  -->
+                  <div class="form-group show_group_fert hide_group">
+                    <label for="fert_type" class="col-sm-2 control-label required_s">肥料品目</label>
+                    <div class="col-sm-10">
+                      <input type="text" id="fert_type" v-model="temp_material.fert_type" class="form-control" placeholder="如:混合有機質肥料(5-12)">
+                    </div>
+                  </div>
+                  <!-- reg_file_no  -->
+                  <div class="form-group show_group_fert hide_group">
+                    <label for="reg_file_no" class="col-sm-2 control-label required_s">商品登記證明文件字號</label>
+                    <div class="col-sm-10">
+                      <input type="text" id="reg_file_no" v-model="temp_material.reg_file_no" class="form-control" placeholder="如:肥製（質）字第0000000號">
+                    </div>
+                  </div>
+                  <!-- row_material  -->
+                  <div class="form-group show_group_fert show_group_other hide_group">
+                    <label for="row_material" class="col-sm-2 control-label required_s">標示原料</label>
+                    <div class="col-sm-10">
+                      <input type="text" id="row_material" v-model="temp_material.row_material" class="form-control" placeholder="如:蓖麻粕">
+                    </div>
+                  </div>
+                  <!-- ingredients -->
+                  <div class="form-group show_group_fert show_group_pest hide_group">
+                    <label for="ingredients" class="col-sm-2 control-label required_s">登記成分</label>
+                    <div class="col-sm-10">
+                      <input type="text" class="form-control" v-model="temp_material.ingredients" id="ingredients" placeholder="如:全氮4%">
+                    </div>
+                  </div>
+                  <!-- cultivar_id -->
+                  <div class="form-group show_group_crop hide_group">
+                    <label for="cultivar_id" class="col-sm-2 control-label required_s">種別</label>
+                    <div class="col-sm-10">
+                      <select class="form-control" id="cultivar_id" v-model="temp_material.cultivar_id" required>
+                        <option></option>
+                        <option v-for="crop in materials[2]" :value="crop['cultivar_id']">{{ '{{' }}crop['cultivar_name']{{ '}}' }}</option>
+                      </select>
+                      <br>
+                      <input type="text" class="search_select" oninput="search_select(this,'cultivar_id')" placeholder="可由此搜尋">
+                    </div>
+                  </div>
+                  <!-- memo -->
+                  <div class="form-group">
+                    <label for="memo" class="col-sm-2 control-label">備註</label>
+                    <div class="col-sm-10">
+                      <textarea name="memo" id="memo" v-model="temp_material.memo" style="width:100%;"></textarea>
+                    </div>
+                  </div>
+
+                <!-- buttons -->
+                <div class="modal-footer">
+                  {% if is_superuser == 1 %}
+                    <button type="button" class="btn btn-danger" @click="material_delete" v-if="temp_material.item_no !== ''">刪除</button>
+                  {% endif %}
+                  {% if is_superuser == 1 or is_superuser == 2 %}
+                    <button type="button" class="btn btn-info" @click="material_update" v-if="temp_material.item_no !== ''">更新</button>
+                    <button type="button" class="btn btn-success" @click="material_create" v-if="temp_material.item_no === ''">確定</button>
+                  {% endif %}
+                  <button type="button" class="btn btn-default" data-dismiss="modal" data-target="#material_modal">關閉</button>
+                </div>
+              </form>
+              <!-- /form -->
+            </div>
+
+          </div>
+        </div>
+        <!-- /Modal -->
+      </div>
+      <!-- /FARM -->
+    </div>
+  </div>
+{% endblock %}
+
+
+{% block page_script %}
+<!-- CDNJS :: Sortable (https://cdnjs.com/) -->
+<script src="//cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js"></script>
+<!-- CDNJS :: Vue.Draggable (https://cdnjs.com/) -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.15.0/vuedraggable.min.js"></script>
+<script src="/static/js/backtop.js"></script>
+<script>
+  var app = null;
+
+  $(() => {
+    var materialTable = {
+      template: '#material-table-template',
+      props: {
+        value: Array,
+        remove: Function
+      },
+      name: 'material-table',
+      computed: {
+        materials: {
+          get() {
+            return this.value
+          },
+          set(value) {
+            this.$emit('input', value)
+          }
+        }
+      },
+      methods: {
+        material_remove(index) {
+          this.remove(index);
+        }
+      }
+    };
+
+    // set Vue data
+    app = new Vue({
+      components:{materialTable: materialTable},
+      el: '#app',
+      data: () => {
+        return {
+          materials: [],
+          temp_material: {
+            item_no:'',
+            material_code: '',
+            item_name: '',
+            sup_id: '',
+            type_code: '',
+            material_no: '',
+            memo: '',
+          },
+        }
+      },
+      mounted () {
+        // init data
+        this.material_reload();
+      },
+      methods: {
+        material_reload() {
+          axios.get('/api/material')
+               .then(response => (this.materials = response.data))
+               .catch((error) => {alert("取得資料失敗");});
+        },
+        material_new() {
+          this.temp_material = {
+            item_no:'',
+            material_code: '',
+            item_name: '',
+            sup_id: '',
+            type_code: '',
+            organic_material_no: '',
+            pest_reg_no: '',
+            fert_type: '',
+            reg_file_no: '',
+            row_material: '',
+            ingredients: '',
+            material_no: '',
+            memo: '',
+          }
+          $('#material_modal').modal('toggle');
+        },
+        material_create() {
+          // TODO: validate data.
+          axios.post('/api/material', this.temp_material)
+               .then((data, status, request) => {
+                      this.material_reload();
+                      $('#material_modal').modal('toggle');
+               })
+               .catch((error) => {alert("創建失敗");;});
+        },
+        material_modify(index) {
+          // clone modify data, not alias
+          this.temp_material = JSON.parse(JSON.stringify(this.materials[index]));
+          $('#material_modal').modal('toggle');
+        },
+        material_update() {
+          // TODO: validate data.
+          axios.put('/api/material', this.temp_material)
+               .then((data, status, request) => {
+                      this.material_reload();
+                      $('#material_modal').modal('toggle');
+               })
+               .catch((error) => {alert("修改失敗");});
+        },
+        material_delete() {
+          axios.delete('api/material?material_id=' + this.temp_material.item_no)
+               .then((data, status, request) => {
+                      this.material_reload();
+                      $('#material_modal').modal('toggle');
+               })
+               .catch((error) => {alert("刪除失敗");;});
+        }
+      }
+    });
+
+});
+</script>
+<script>
+  $(function(){
+    $(".hide_group").each(function(){
+      $(this).hide();
+    })
+    $('#material_modal').on('hide.bs.modal', function (e) {
+      $(".hide_group").each(function(){
+          $(this).hide()
+        })
+    })
+    $('#material_modal').on('shown.bs.modal', function (e) {
+      typecode_change()
+    })
+  })
+
+  function onSearch(obj){  
+        setTimeout(function(){ 
+            var storeId = document.getElementById('store');
+            var rowsLength = storeId.rows.length;
+            var key = obj.value;  
+            
+            for(let i=1;i<rowsLength;i++){
+                let searchText = storeId.rows[i].cells[0].textContent;
+				        let searchText2 = storeId.rows[i].cells[1].textContent;
+                let searchText3 = storeId.rows[i].cells[2].textContent;
+                let searchText4 = storeId.rows[i].cells[3].textContent;
+                let searchText5 = storeId.rows[i].cells[4].textContent;
+                if(searchText.match(key) || searchText2.match(key) || searchText3.match(key) || searchText4.match(key) || searchText5.match(key)){  
+                    storeId.rows[i].style.display='';
+                }else{  
+                    storeId.rows[i].style.display='none';
+                }  
+            }  
+        },200);
+    }
+  $(document).on('click','th',function(){
+    var table = $(this).parents('table').eq(0);
+    var rows = table.find('tr:gt(0)').toArray().sort(comparer($(this).index()));
+    this.asc = !this.asc;
+    if (!this.asc){rows = rows.reverse();}
+    table.children('tbody').empty().html(rows);
+  });
+  function comparer(index) {
+      return function(a, b) {
+          var valA = getCellValue(a, index), valB = getCellValue(b, index);
+          return $.isNumeric(valA) && $.isNumeric(valB) ?
+              valA - valB : valA.localeCompare(valB);
+      };
+  }
+  function getCellValue(row, index){
+      return $(row).children('td').eq(index).text();
+  }
+
+  $(".required_s").prepend("<span style='color:red;'>*</span>");
+
+function search_select(obj,id){
+  var target = obj.value;
+  size_counter = 1;
+  if(target != ""){
+    $("#"+id+" option").prop("selected", false);
+    $("#"+id+" option").each(function(){
+      let item = this.text;
+      if(item.match(target)){
+        size_counter +=1;
+        $(this).show();
+      }else{
+        $(this).hide();
+      }
+    })
+  }else{
+    $("#"+id+" option").each(function(){
+      $(this).show();
+      $("#"+id).attr("size", 1);
+      $(".select_tip_"+id).remove();
+    })
+  }
+  if(size_counter>1){
+    $(".select_tip_"+id).remove();
+    $("#"+id).after("<span class='select_tip_"+id+"'"+" style='color:red;'>請選擇</span>");
+  }
+  if(size_counter>5){
+    size_counter = 5;
+  }
+  $("#"+id).attr("size", size_counter);
+
+  $("#"+id).change(function(){
+    $("#"+id).attr("size", 1);
+    $(".select_tip_"+id).remove();
+    obj.value="";
+    $("#"+id+" option").each(function(){
+      $(this).show();
+    })
+  })
+}
+
+function typecode_change(){
+  $(".hide_group").each(function(){
+    $(this).hide()
+  })
+  type = $("#type_code").children("option:selected").val()
+  if (type==2){
+    $(".show_group_fert").each(function(){
+      $(this).show()
+    })
+  }else if(type==3){
+    $(".show_group_pest").each(function(){
+      $(this).show()
+    })
+  }else if(type==4){
+    $(".show_group_other").each(function(){
+      $(this).show()
+    })
+  }else if(type==1){
+    $(".show_group_crop").each(function(){
+      $(this).show()
+    })
+  }
+}
+
+$(".form-control").each(function(){
+  if ({{session['is_superuser']}} != 1){
+    tag = $(this).prop('tagName')
+    if (tag == 'INPUT'){
+      $(this).prop("readonly",true)
+    }else if(tag == 'SELECT'){
+      $(this).prop("disabled",true)
+    }
+    $('textarea[id^="memo"]').prop("readonly",true)
+    $('.search_select').each(function(){
+      $(this).hide()
+    })
+  }
+})
+
+</script>
+{% endblock %}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>TIAGA產銷溯源系統</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <!-- lang -->
+    {% include 'base/css.html' %}
+    <link rel="stylesheet" href="/static/css/trace.css">
+    <!-- jQuery 3 -->
+    <script src="/static/jquery/dist/jquery.min.js"></script>
+    <!-- bootstrap -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <!-- lang -->
+    
+</head>
+<body class="hold-transition skin-black-iot sidebar-mini">
+<header class="main-header">
+  <!-- Logo -->
+  <a href="#" class="logo trace-logo-min" style="width:auto;">
+    <span class="logo-lg tano-logo"><img src="/static/logo.png" class="tano-logo-img"><b>農場介紹</b></span>
+  </a>
+  <nav class="navbar navbar-static-top trace-navbar">
+    <a href="#" class="logo trace-logo" style="width:auto;">
+      <span class="logo-lg tano-logo"><img src="/static/logo.png" class="tano-logo-img"><b>農場介紹</b></span>
+    </a>
+  </nav>
+</header>
+
+<div class="content-wrapper" style="margin-left:0px;">
+    <section class="content">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 text-center">
+                    {% if farm_name %}
+                        <h2>{{farm_name}}</h2>
+                    {% else %}
+                        <h2>目前還沒有登記農場</h2>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="row">
+              <div class="col-xs-12">
+                  <div class=" text-center">
+                      <textarea id="farm_info_container"></textarea>
+                  </div>
+              </div>
+            </div>
+        </div>
+    </section>
+</div>
+<footer class="main-footer" style="margin-left:0px;">
+  <div class="row">
+    <div class="col-xs-12 col-sm-6">
+      <strong>Copyright &copy; 2020 <a href="https://www.tanosecure.com.tw/"  target=“_blank” and rel=“noopener noreferrer”>天龍安全科技</a>.</strong> All rights reserved.
+    </div>
+    <div class="col-xs-12 col-sm-6" style="text-align:right;">
+       version 1.10
+    </div>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,48 @@
+.form-group{
+    max-width:100%;
+    display: flex;
+    align-content:center;
+    flex-wrap: wrap;
+}
+.form-group label{
+    flex:2;
+    max-width:15%;
+    margin-right: 15px;
+}
+.form-group p{
+    flex:7;
+}
+
+.form-group .bootstrap-select{
+    flex:7;
+}
+
+.form-group input{
+    flex:7;
+}
+
+.form-group textarea{
+    flex:7;
+}
+
+.form-group .with-errors{
+    width:100%;
+}
+
+.form-check{
+    display: inline;
+}
+
+.form-check-label{
+    width:16.5%;
+}
+
+@media screen and (max-width:425px){
+    .form-group{
+        display: block;
+    }
+
+    .form-group label{
+        max-width:100%;
+    }
+}

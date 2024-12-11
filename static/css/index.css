@@ -1,0 +1,73 @@
+.content-wrapper,.main-footer {
+    margin:0 !important;
+}
+
+.hamburger{
+    display: none;
+}
+
+.content-header{
+    text-align: center;
+}
+
+.content{
+    text-align: center;
+    padding:15px 0px;
+}
+
+.bootstrap-select {
+    margin: 15px auto;
+}
+
+.nav-tabs-custom {
+    display:none;
+    padding:15px 0px;
+    text-align: center !important;
+}
+
+.nav-tabs-custom .bootstrap-select{
+    width:50% !important;
+}
+
+.filter-option-inner-inner,.chk_btn{
+    font-size: 18px;
+}
+
+.dropdown-header span{
+    font-size: 18px;
+}
+
+.opt span{
+    font-size:16px;
+}
+
+.btn_description{
+    padding:15px;
+    margin-top:15px;
+    background-color: white;
+    text-align: center;
+}
+
+.btn_description p{
+    padding:10px ;
+    font-size:18px;
+}
+
+.title,.sel_opt,.content,.nav-tabs-custom{
+    background-color: white;
+}
+
+.title{
+    margin-top:15px;
+    padding:10px;
+    text-align: center;
+}
+
+.title p{
+    font-size:32px;
+    margin:0px;
+}
+
+.dropdown-menu{
+    z-index: 1024;
+}

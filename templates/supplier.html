@@ -1,0 +1,388 @@
+{% extends 'base/base.html' %} 
+
+{% block page_title %}供應商一覽{% endblock %}
+
+
+{% block page_content %}
+<script type="text/x-template" id="field-farm-table-template">
+</script>
+  <!-- TODO: combine MODAL -->
+  <div class="nav-tabs-custom" id="app">
+    <ul class="nav nav-tabs">
+      <li class="active" id="tab_farm">
+        <a href="#sup_management" data-toggle="tab" class="">供應商一覽</a>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+	  
+      <!-- FARM -->
+      <div class="tab-pane active" id="sup_management">
+        <div class="row">
+          <div class="col-md-2"></div>
+          <div class="col-md-12">
+            <div class="box">
+              <!-- box-header -->
+              <div class="box-header with-border">
+                {% if is_superuser == 1 or is_superuser == 2 %}
+                  <button class="btn btn-success" @click="sup_new">新增</button>
+                {% endif %}
+              </div>
+              <!-- /box-header -->
+
+              <!-- body table -->
+              <div class="box-body" style="overflow-x: auto;">
+                <p><b class="">搜尋</b>：<input name="key" type="text" id="key" class="" onkeydown="onSearch(this)" value=""  placeholder="請輸入關鍵字"/></p>
+                <table class="table table-bordered table-hover dataTable" id="store">
+                  <thead>
+                     <tr>
+                      <th>供應商編碼 <i class='fa fa-sort'></i></th>
+                      <th>供應商名稱 <i class='fa fa-sort'></i></th>
+                      <th>供應商種類 <i class='fa fa-sort'></i></th>
+                      <th>統編 <i class='fa fa-sort'></i></th>
+                      <th>聯絡人 <i class='fa fa-sort'></i></th>
+                      <th>電話 <i class='fa fa-sort'></i></th>
+					            <th>供應商地址 <i class='fa fa-sort'></i></th>
+                      <th>e-mail <i class='fa fa-sort'></i></th>
+                      <th>Line ID <i class='fa fa-sort'></i></th>
+                      <th>備註 <i class='fa fa-sort'></i></th>
+                    </tr>
+                  <thead>
+                  <tbody>
+                    <template v-for="(sup, index) in sups" v-if="(index>0)">
+                      <tr>
+                        <td>
+                          <a href="#" @click="sup_modify(index)">{{ '{{' }}sup.sup_id{{ '}}' }}</a>
+                        </td>
+                        <td>{{ '{{' }}sup.sup_name{{ '}}' }}</td>
+                        <td>{{ '{{' }}sup.type_code_name{{ '}}' }}</td>
+                        <td>{{ '{{' }}sup.busi_id{{ '}}' }}</td>
+                        <td>{{ '{{' }}sup.user_name{{ '}}' }}</td>
+                        <td>{{ '{{' }}sup.tel_no{{ '}}' }}</td>
+                        <td>{{ '{{' }}sup.sup_addr{{ '}}' }}</td>
+                        <td>{{ '{{' }}sup.email{{ '}}' }}</td>
+                        <td>{{ '{{' }}sup.wechat_id{{ '}}' }}</td>
+                        <td>{{ '{{' }}sup.memo{{ '}}' }}</td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+              <!-- /body table -->
+            </div>
+            <!-- /box -->
+          </div>
+        </div>
+
+        <!-- Modal -->
+        <div id="sup_modal" class="modal fade" role="dialog">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" data-target="#sup_modal">&times;</button>
+                <h4 class="modal-title">供應商管理</h4>
+              </div>
+              <!-- form -->
+              <form class="form-horizontal">
+                <div class="modal-body">
+                  <input type="hidden" class="sup-control" id="sup-id" v-model="temp_sup.id" disabled>
+                  <div class="form-group">
+                    <label for="sup-sup-name" class="col-sm-2 control-label required_s">供應商名稱</label>
+                    <div class="col-sm-10" id="name_box">
+                      <input type="text" class="form-control" id="sup-sup-name" placeholder="供應商名稱"  v-model="temp_sup.sup_name" required>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="sup-busi-id" class="col-sm-2 control-label">統編</label>
+                    <div class="col-sm-10" id="busi_box">
+                      <input type="text" class="form-control" id="sup-busi-id" placeholder="供應商統編" onblur=isBusi(this.value) v-model="temp_sup.busi_id" required>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="sup-type" class="col-sm-2 control-label required_s">供應商種類</label>
+                    <div class="col-sm-10">
+                      <select id="sup-type" class="form-control" v-model="temp_sup.type_code">
+                        <option v-for="sup in sups[0]['type_list']" :value="sup['type_code']">{{ '{{' }}sup['type_name']{{ '}}' }}</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="sup-user-name" class="col-sm-2 control-label">聯絡人</label>
+                    <div class="col-sm-10">
+                      <input type="text" class="form-control" id="sup-user-name" placeholder="聯絡人名稱" v-model="temp_sup.user_name">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="sup-tel-no" class="col-sm-2 control-label required_s">電話</label>
+                    <div class="col-sm-10" id="tel_box">
+                        <input type="text" class="form-control" id="sup-tel-no" placeholder="如:0911380609" onblur=isTel(this.value) v-model="temp_sup.tel_no">
+                    </div>                    
+                  </div>
+                  <div class="form-group">
+                    <label for="sup-sup-addr" class="col-sm-2 control-label required_s">供應商地址</label>
+                    <div class="col-sm-10" >
+                        <input type="text" class="form-control" id="sup-sup-addr" placeholder="供應商地址" v-model="temp_sup.sup_addr">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="sup-email" class="col-sm-2 control-label">e-mail</label>
+                    <div class="col-sm-10" id="email_box">
+                        <input type="email" class="form-control" id="sup-email" placeholder="e-mail" onblur=isEmail(this.value) v-model="temp_sup.email">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="sup-wechat-id" class="col-sm-2 control-label">Line ID</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="sup-wechat-id" placeholder="Line ID" v-model="temp_sup.wechat_id">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="sup-memo" class="col-sm-2 control-label">備註</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="sup-memo" placeholder="其他補充說明" v-model="temp_sup.memo">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- buttons -->
+                <div class="modal-footer">
+                  {% if is_superuser == 1 %}
+                    <button type="button" class="btn btn-danger" @click="sup_delete" v-if="temp_sup.id !== ''">刪除</button>
+                  {% endif %}
+                  {% if is_superuser == 1 or is_superuser == 2 %}
+                    <button type="button" class="btn btn-info" @click="sup_update" v-if="temp_sup.id !== ''">更新</button>
+                    <button type="button" class="btn btn-success" @click="sup_create" v-if="temp_sup.id == ''">確定</button>
+                  {% endif %}
+                  <button type="button" class="btn btn-default" data-dismiss="modal" data-target="#sup_modal">關閉</button>
+                </div>
+              </form>
+              <!-- /form -->
+            </div>
+
+          </div>
+        </div>
+        <!-- /Modal -->
+      </div>
+      <!-- /FARM -->
+    </div>
+  </div>
+{% endblock %}
+
+{% block page_script %}
+<!-- CDNJS :: Sortable (https://cdnjs.com/) -->
+<script src="//cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js"></script>
+<!-- CDNJS :: Vue.Draggable (https://cdnjs.com/) -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.15.0/vuedraggable.min.js"></script>
+<script>
+  var app = null;
+
+  $(() => {
+    var fieldFarmTable = {
+      template: '#field-farm-table-template',
+      props: {
+        value: Array,
+        remove: Function
+      },
+      name: 'field-farm-table',
+      computed: {
+        farms: {
+          get() {
+            return this.value
+          },
+          set(value) {
+            this.$emit('input', value)
+          }
+        }
+      },
+      methods: {
+        field_farm_remove(index) {
+          this.remove(index);
+        }
+      }
+    };
+
+    // set Vue data
+    app = new Vue({
+      components:{fieldFarmTable: fieldFarmTable},
+      el: '#app',
+      data: () => {
+        return {
+          sups: [{'type_list':''}],
+          temp_sup: {
+            id: '',
+            sup_id: '',
+            sup_name: '',
+            type_code: '',
+            busi_id: '',
+            user_name: '',
+            tel_no: '',
+            sup_addr: '',
+            email: '',
+            wechat_id: '',
+            memo: '',
+          },
+        }
+      },
+      mounted () {
+        // init data
+        this.sup_reload();
+      },
+      methods: {
+        sup_reload() {
+          axios.get('/ItemSupplier')
+               .then(response => (this.sups = response.data))
+               .catch((error) => {alert("取得資料失敗");})
+        },
+        sup_new() {
+          this.temp_sup = {
+            id: '',
+            sup_id: '',
+            sup_name: '',
+            busi_id: '',
+            type_code: '',
+            user_name: '',
+            tel_no: '',
+            sup_addr: '',
+            email: '',
+            wechat_id: '',
+            memo: '',
+          }
+          $('#sup_modal').modal('toggle');
+        },
+        sup_create() {
+          // TODO: validate data.
+          axios.post('/ItemSupplier', this.temp_sup)
+               .then((data, status, request) => {
+                      this.sup_reload();
+                      $('#sup_modal').modal('toggle');
+               })
+               .catch((error) => {alert("創建失敗");});
+        },
+        sup_modify(index) {
+          // clone modify data, not alias
+          this.temp_sup = JSON.parse(JSON.stringify(this.sups[index]));
+          $('#sup_modal').modal('toggle');
+          $("#name_alert_text").remove();
+          $("#email_alert_text").remove();
+          $("#tel_alert_text").remove();
+          $("#busi_alert_text").remove();
+        },
+        sup_update() {
+          // TODO: validate data.
+          let put_data = this.temp_sup;
+          delete put_data["type_code_name"];
+          axios.put('/ItemSupplier', put_data)
+               .then((data, status, request) => {
+                      this.sup_reload();
+                      $('#sup_modal').modal('toggle');
+               })
+               .catch((error) => {alert("修改失敗");});
+        },
+        sup_delete() {
+          axios.delete('/ItemSupplier?sup_id=' + this.temp_sup.sup_id)
+               .then((data, status, request) => {
+                      this.sup_reload();
+                      $('#sup_modal').modal('toggle');
+               })
+               .catch((error) => {alert("刪除失敗");});
+        }
+      }
+    });
+
+});
+</script>
+<script>
+  function onSearch(obj){  
+        setTimeout(function(){ 
+            var storeId = document.getElementById('store');
+            var rowsLength = storeId.rows.length;
+            var key = obj.value;  
+            
+            for(let i=1;i<rowsLength;i++){
+                let searchText = storeId.rows[i].cells[0].textContent;
+				        let searchText2 = storeId.rows[i].cells[1].textContent;
+                let searchText3 = storeId.rows[i].cells[2].textContent;
+                let searchText4 = storeId.rows[i].cells[3].textContent;
+                let searchText5 = storeId.rows[i].cells[4].textContent;
+                let searchText6 = storeId.rows[i].cells[5].textContent;
+                let searchText7 = storeId.rows[i].cells[6].textContent;
+                let searchText8 = storeId.rows[i].cells[7].textContent;
+                let searchText9 = storeId.rows[i].cells[8].textContent;
+                let searchText10 = storeId.rows[i].cells[9].textContent;
+                if(searchText.match(key) || searchText2.match(key) || searchText2.match(key) || searchText3.match(key) || searchText4.match(key) || searchText5.match(key) || searchText6.match(key) || searchText7.match(key) || searchText8.match(key) || searchText9.match(key)){  
+                    storeId.rows[i].style.display='';
+                }else{  
+                    storeId.rows[i].style.display='none';
+                }  
+            }  
+        },200);
+    }
+
+  function isEmail(str) {
+    if (str.search(/\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}/) != -1){
+      $("#email_alert_text").remove();
+      return true;
+    }
+    else{
+      $("#email_alert_text").remove();
+      $("#email_box").append('<p id="email_alert_text" style="color:red;">請輸入有效郵件地址</p>');
+    }
+  }
+
+  function isTel(str) {
+    if (str.search(/^\d{7,18}$/) != -1){
+      $("#tel_alert_text").remove();
+      return true;
+    }
+    else{
+      $("#tel_alert_text").remove();
+      $("#tel_box").append('<p id="tel_alert_text" style="color:red;">請輸入有效電話號碼</p>');
+    }
+  }
+
+  function isBusi(str){
+    if (str.search(/^\d{8}$/) != -1){
+      $("#busi_alert_text").remove();
+      return true;
+    }
+    else{
+      $("#busi_alert_text").remove();
+      $("#busi_box").append('<p id="busi_alert_text" style="color:red;">請輸入有效統編</p>');
+    }
+  }
+
+  $(document).on('click','th',function(){
+    var table = $(this).parents('table').eq(0);
+    var rows = table.find('tr:gt(0)').toArray().sort(comparer($(this).index()));
+    this.asc = !this.asc;
+    if (!this.asc){rows = rows.reverse();}
+    table.children('tbody').empty().html(rows);
+  });
+  
+  function comparer(index) {
+      return function(a, b) {
+          var valA = getCellValue(a, index), valB = getCellValue(b, index);
+          return $.isNumeric(valA) && $.isNumeric(valB) ?
+              valA - valB : valA.localeCompare(valB);
+      };
+  }
+
+  function getCellValue(row, index){
+      return $(row).children('td').eq(index).text();
+  }
+
+  $(".form-control").each(function(){
+    if ({{session['is_superuser']}} != 1){
+      tag = $(this).prop('tagName')
+      if (tag == 'INPUT'){
+        $(this).prop("readonly",true)
+      }else if(tag == 'SELECT'){
+        $(this).prop("disabled",true)
+      }
+      $('textarea[id$="memo"]').prop("readonly",true)
+    }
+  })
+
+  $(".required_s").prepend("<span style='color:red;'>*</span>");
+</script>
+{% endblock %}

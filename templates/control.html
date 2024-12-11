@@ -1,0 +1,249 @@
+{% extends 'base/base.html' %} 
+
+{% block page_title %}場域設備遠端控制{% endblock %}
+
+{% block page_content %}
+    <div class="row">
+        {% if have_m3 %}
+            <div class="col-xs-12 text-center">
+                <h4>選擇要操作的遠端控制器</h4>
+            <div>
+            {% for controller in controller_access_list %}
+                <div class="col-xs-6 col-sm-4 col-md-3">
+                    <button class="btn btn-primary" onclick="connect_controller('{{controller.mac}}','{{controller.alias}}');">{{controller.alias}}</button>
+                </div>
+            {% endfor %}
+            <div class="col-xs-12" id="controller_body">
+            </div>
+            <div class="modal fade" id="timer_modal" tabindex="-1" role="dialog" aria-labelledby="timer_modal" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                    <h4 class="modal-title">排程設定</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    </div>
+                    <div class="modal-body row">
+                        <h4 id="timer_sub_title"></h4>
+                        <h4 class="col-xs-6 col-sm-4 col-sm-offset-2 text-center">開啟時間</h4>
+                        <h4 class="col-xs-6 col-sm-4 text-center">關閉時間</h4>
+                        <div class="col-xs-6 col-sm-4 col-sm-offset-2 timer_start">
+                            <select id="timer_hour_start" name="timer_hour_start"></select>
+                            <label for="timer_hour_start" class="timer_label">時</label>
+                            <select id="timer_minute_start" name="timer_minute_start"></select>
+                            <label for="timer_minute_start" class="timer_label">分</label>
+                        </div>
+                        <div class="col-xs-6 col-sm-4 timer_end">
+                            <select id="timer_hour_end" name="timer_hour_end"></select>
+                            <label for="timer_hour_end" class="timer_label">時</label>
+                            <select id="timer_minute_end" name="timer_minute_end"></select>
+                            <label for="timer_minute_end" class="timer_label">分</label>
+                        </div>
+                        <div class="col-xs-12">
+                            <button type="button" id="add_timer_btn" class="btn btn-success">新增/修改</button>
+                            <button type="button" id="delete_timer_btn" class="btn btn-danger">刪除</button>
+                        </div>
+                        <h4 class="col-xs-12">已啟用排程</h4>
+                        <p class="col-xs-12">點選可進行修改，相同開啟時間會進行覆蓋<p>
+                        <h4 class="col-xs-6 col-sm-4 col-sm-offset-2 text-center">開啟時間</h4>
+                        <h4 class="col-xs-6 col-sm-4 text-center">關閉時間</h4>
+                        <div id="schedule_box"></div>
+                    </div>
+					<div class="modal-footer relay_timer_footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">關閉視窗</button>
+					</div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+            <div class="col-xs-12 text-center"><h3>沒有可控制的場域設備</h3></div>
+        {% endif %}
+    <div>
+{% endblock %}
+
+{% block page_script %}
+    <script>
+        var temp_mac = ""
+        var temp_timer_pin_no = ""
+        var schedule_list = {}
+
+        function connect_controller(mac,alias){
+            $.ajax({
+                url: `/api/connect_controller?mac=${mac}`,
+                type: 'GET'
+            }).done(function(data){
+                temp_mac = mac
+                $("#controller_body").empty()
+                $("#controller_body").append(`<h3 class="text-center">${alias}</h3>`)
+
+                for (relay in data){
+                    $("#controller_body").append(
+                        `<div class="col-xs-6 col-sm-4 col-md-3 text-center relay_box">
+						    <span class="relay_name">${data[relay].relay_alias}</span>
+						    <img class="relay_icon" src="${data[relay].icon_path}" style="width:60px; height: 60px;">
+                            <div class="switch_box">
+                                <label class="switch">
+                                    <input type="checkbox" id="relay${data[relay].pin_no}" class="relay_checkbox" ${data[relay].check_status}>
+                                    <span class="slider round switch_mask_box">
+                                        <button class="switch_mask" onclick="relay_change_status('${temp_mac}','${data[relay].pin_no}',get_relay_new_status(${data[relay].pin_no}))"></button>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="timer_btn_box text-center">
+                                <button class="timer_btn" data-toggle="modal" data-target="#timer_modal" data-pin-name="${data[relay].relay_alias}" data-pin-no="${data[relay].pin_no}">排程設定</button>
+                                <div>上次開/關時間</div>
+                                <div class="last_time_box"><span id="relay${data[relay].pin_no}_last_time">${data[relay].last_time}</span></div>
+                            </div>
+                        </div>`
+                    )
+                    schedule_list[data[relay].pin_no] = data[relay].schedule
+                }
+
+                $("#controller_body").append('<div>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>')
+                
+                setInterval(function(){update_all_relay_status(temp_mac)},5000)
+            }).fail(function(xhr, ajaxOptions, thrownError){
+                console.log("取得控制器列表失敗")
+            })
+        }
+
+        function relay_change_status(mac,PinNo,status) {
+            pin_no = PinNo
+            if (pin_no.length == 1){
+                var pin_no = '0'+pin_no
+            }
+            $.ajax({
+                type: 'PUT',
+                url: `/api/relay_status`,
+                data: JSON.stringify({'mac':mac,'PinNo':pin_no,'status': status}),
+                contentType:"application/json; charset=utf-8"
+            }).done(function(data){
+                $("#relay"+PinNo).prop('checked',status)
+            }).fail(function(xhr, ajaxOptions, thrownError){
+                console.log("更新控制器狀態失敗")
+            })
+        }
+
+        function get_relay_new_status(PinNo) {
+            var status = $(`#relay${PinNo}`).is(":checked")
+            if (status){
+                return 0
+            }else{
+                return 1
+            }
+        }
+
+        function update_all_relay_status(mac) {
+            $.ajax({
+                type:"GET",
+                url:`/api/relay_status?mac=${mac}&all=1`
+            }).done(function(datas){
+                for (key in datas){
+                    pin_no = Object.keys(datas[key])[0]
+                    $("#relay"+pin_no).prop('checked',parseInt(datas[key][pin_no]['status']))
+                    $("#relay"+pin_no+"_last_time").text(datas[key][pin_no]['time'])
+                }
+            }).fail(function(xhr, ajaxOptions, thrownError){
+                console.log("取得控制器狀態失敗")
+            })
+        }
+
+        function add_timer_time(target_id,interval,times) {
+            let val = 0
+            for (let i=0; i<times; i++){
+                $(`#${target_id}`).append(`<option value="${val}">${val}</option>`)
+                val += interval
+            }
+        }
+
+        $("#timer_modal").on("show.bs.modal",function(e){
+            temp_timer_pin_no = $(e.relatedTarget).data("pin-no")
+            temp_timer_pin_name = $(e.relatedTarget).data("pin-name")
+            $("#timer_sub_title").text(temp_timer_pin_name)
+            init_temp_timer()
+            console.log(schedule_list)
+            update_schedule_box(schedule_list,temp_timer_pin_no)
+        })
+
+        $("#add_timer_btn").on("click",function(){
+            let hour_start = $("#timer_hour_start").val() < 10 ? "0"+$("#timer_hour_start").val().toString() : $("#timer_hour_start").val().toString()
+            let hour_end = $("#timer_hour_end").val() < 10 ? "0"+$("#timer_hour_end").val().toString() : $("#timer_hour_end").val().toString()
+            let minute_start = $("#timer_minute_start").val() < 10 ? "0"+$("#timer_minute_start").val().toString() : $("#timer_minute_start").val().toString()
+            let minute_end = $("#timer_minute_end").val() < 10 ? "0"+$("#timer_minute_end").val().toString() : $("#timer_minute_end").val().toString()
+
+            let start = hour_start+":"+minute_start+":00"
+            let end = hour_end+":"+minute_end+":00"
+
+            $.ajax({
+                    type: "POST",
+                    url: "/api/timer_management",
+                    data: JSON.stringify({'mac':temp_mac,'PinNo':temp_timer_pin_no,'start': start,'end': end}),
+                    contentType:"application/json; charset=utf-8"
+            }).done(function(data){
+                schedule_list = data
+                update_schedule_box(schedule_list,temp_timer_pin_no)
+            }).fail(function(xhr, ajaxOptions, thrownError){
+                console.log("更新排程失敗")
+            })
+        })
+
+        $("#delete_timer_btn").on("click",function(){
+            let hour_start = $("#timer_hour_start").val() < 10 ? "0"+$("#timer_hour_start").val().toString() : $("#timer_hour_start").val().toString()
+            let minute_start = $("#timer_minute_start").val() < 10 ? "0"+$("#timer_minute_start").val().toString() : $("#timer_minute_start").val().toString()
+            
+            let start = hour_start+":"+minute_start+":00"
+
+            $.ajax({
+                    type: "DELETE",
+                    url: "/api/timer_management",
+                    data: JSON.stringify({'mac':temp_mac,'PinNo':temp_timer_pin_no,'start': start}),
+                    contentType:"application/json; charset=utf-8"
+            }).done(function(data){
+                schedule_list = data
+                update_schedule_box(schedule_list,temp_timer_pin_no)
+            }).fail(function(xhr, ajaxOptions, thrownError){
+                console.log("刪除排程失敗")
+            })
+        })
+
+        function update_temp_timer(start,end){
+            let _start = start.split(":")
+            let _end = end.split(":")
+            $("#timer_hour_start").val(parseInt(_start[0]))
+            $("#timer_minute_start").val(parseInt(_start[1]))
+            $("#timer_hour_end").val(parseInt(_end[0]))
+            $("#timer_minute_end").val(parseInt(_end[1]))
+        }
+
+        function init_temp_timer(){
+            $("#timer_hour_start").val(0)
+            $("#timer_minute_start").val(0)
+            $("#timer_hour_end").val(0)
+            $("#timer_minute_end").val(0)
+        }
+
+        function update_schedule_box(schedule,pin){
+            $("#schedule_box").empty()
+            if (Object.prototype.hasOwnProperty.call(schedule, pin)){
+                for (let i = 0; i<Object.keys(schedule[pin]).length; i++){
+                    $("#schedule_box").append(
+                        `<div class="schedule_time_text_box" onclick="update_temp_timer('${schedule[pin][i].OnTime}','${schedule[pin][i].OffTime}');">
+                            <div class="col-xs-6 col-sm-4 col-sm-offset-2 text-center schedule_time_text schedule_time_start">${schedule[pin][i].OnTime}</div>
+                            <div class="col-xs-6 col-sm-4 text-center schedule_time_text schedule_time_end">${schedule[pin][i].OffTime}</div>
+                        </div>`
+                    )
+                }
+            }
+
+        }
+
+    {% if have_m3 %}
+        add_timer_time("timer_hour_start",1,24)
+        add_timer_time("timer_minute_start",5,12)
+        add_timer_time("timer_hour_end",1,24)
+        add_timer_time("timer_minute_end",5,12)
+    {% endif %}
+
+    </script>
+{% endblock %}

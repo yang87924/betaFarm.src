@@ -1,0 +1,127 @@
+@media only screen and (max-width: 767px) {
+    .navbar {
+        display:none;
+    }
+    .panel_block_top {
+        margin-top:10px;
+    }
+  }
+
+@media only screen and (max-width: 320px) {
+    #GACP_search_btn {
+        margin-top:10px;
+    }
+}
+
+.crop_image_out {
+    background-color: white;
+}
+
+.crop_image_container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    background-color: white;
+    border: solid 5px white;
+}
+  
+.crop_image {
+    width:100%;
+    transform: rotate(0);
+}
+
+.panel_block {
+    background-color: white;
+    border: solid 5px white;
+    margin-top:10px;
+}
+
+.panel_block_top {
+    background-color: white;
+    border: solid 5px white;
+}
+
+.btn-group-container {
+    margin-top:5px;
+}
+
+.btn-gacp-container {
+    padding:5px;
+}
+
+.btn-gacp-search {
+    width:100%;
+    padding:5%;
+    overflow : hidden;
+    text-overflow : ellipsis;
+}
+
+.report_image_container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.report_image {
+    width:80%; 
+    margin-bottom:20px;
+}
+
+.work_record {
+    padding-left:calc( 15px + 5% )
+}
+
+.work_image {
+    max-width:400px;
+    width:80%;
+}
+
+.summary-group-container {
+    max-height:350px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+}
+
+.summary-group-container::-webkit-scrollbar {
+    display: none;
+}
+
+#intro_container{
+    background-color: white;
+}
+
+#intro_container .img-responsive {
+    display:inline;
+    margin: 5px;
+}
+
+.ipcam_pic_card{
+    width:100%;
+    margin-top: 15px;
+}
+
+.ipcam_btn {
+    margin-top: 10px;
+}
+
+
+.btn-trend {
+    color: #fff;
+    background-color: #17bb8a;
+    border-color: #32daa7;
+  }
+
+.btn-trend:hover, .btn-trend:focus, .btn-trend:active:hover {
+    color: #fff;
+    background-color: #17bb8a;
+    border-color: #32daa7;
+}
+
+.price_trend_btn {
+    margin-top: 10px;
+}
+
+
+

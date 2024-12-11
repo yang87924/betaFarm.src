@@ -1,0 +1,1891 @@
+{% extends 'base/base.html' %}
+
+{% block page_title %}系統管理{% endblock %}
+
+
+{% block page_content %}
+<script type="text/x-template" id="field-sensor-table-template">
+  <table class="table table-bordered table-hover dataTable">
+    <thead>
+      <tr>
+        <th></th>
+        <th>name</th>
+        <th>df_name</th>
+        <th>alias</th>
+        <th>unit</th>
+        <th>icon</th>
+        <th>bg_color</th>
+      </tr>
+    </thead>
+    <tbody :list="sensors">
+      <tr v-for="(sensor, index) in sensors">
+          <td><input type="button" @click="field_sensor_remove(index)" value="x"></td>
+          <td>{{ '{{' }}sensor.alias{{ '}}' }}</td>
+          <td><input type="text" v-model="sensor.df_name"></td>
+          <td><input type="text" v-model="sensor.alias"></td>
+          <td><input type="text" v-model="sensor.unit"></td>
+      <div class="input-group">
+        <input type="text" v-model="sensor.icon">
+        <span class="input-group-addon">
+          <i class="fa" :class="sensor.icon"></i>
+        </span>
+      </div>
+          </td>
+          <td>
+      <div class="input-group">
+        <input type="text" v-model="sensor.bg_color">
+        <span class="input-group-addon" :class="sensor.bg_color"><i class="fa"></i></span>
+      </div>
+          </td>
+      </tr>
+    </tbody>
+  </table>
+</script>
+<!-- TODO: combine MODAL -->
+<div class="nav-tabs-custom" id="app">
+  <ul class="nav nav-tabs">
+    <li class="active" id="tab_user">
+      <a href="#user_management" data-toggle="tab" class="">用戶管理</a>
+    </li>
+    <li class="" id="tab_field">
+      <a href="#field_management" data-toggle="tab" class="">場域管理</a>
+    </li>
+    <li class="" id="tab_other_sensor">
+      <a href="#other_sensor_management" data-toggle="tab" class="">其他傳感器</a>
+    </li>
+    <li class="" id="tab_ipcam">
+      <a href="#ipcam_management" data-toggle="tab" class="">攝像機管理</a>
+    </li>
+    <li class="" id="tab_control">
+      <a href="#controller_management" data-toggle="tab" class="">遠端控制管理</a>
+    </li>
+    {% if session['trace_sys_flag'] %}
+    <li class="" id="tab_gacp">
+      <a href="#gacp_management" data-toggle="tab" class="">GACP管理</a>
+    </li>
+    {% endif %}
+  </ul>
+
+  <div class="tab-content">
+
+    <!-- USER -->
+    <div class="tab-pane active" id="user_management">
+      <div class="row">
+        <div class="col-md-3"></div>
+        <div class="col-md-6">
+          <div class="box">
+            <!-- box-header -->
+            <div class="box-header with-border">
+              <h3 class="box-title">使用者</h3>
+              <div class="box-tools">
+                <button class="btn btn-success" @click="user_new">新增</button>
+              </div>
+            </div>
+            <!-- /box-header -->
+
+
+            <!-- body table -->
+            <div class="box-body">
+              <p><b class="">搜尋</b>：<input name="key" type="text" id="key" onkeydown="onSearch(this)" class="" value=""
+                  placeholder="請輸入關鍵字" /></p>
+              <table class="table table-bordered table-hover dataTable" id="store">
+                <thead>
+                  <tr>
+                    <th>帳號 <i class='fa fa-sort'></i></th>
+                    <th>用戶組 <i class='fa fa-sort'></i></th>
+                  </tr>
+                  <thead>
+                  <tbody>
+                    <template v-for="(user, index) in users">
+                      <tr v-if="user.is_superuser == 4">
+                        <td>
+                          <p style="margin-bottom:0px;">{{ '{{' }}user.username{{ '}}' }}</p>
+                        </td>
+                        <td class="">管理員</td>
+                      </tr>
+                      <tr v-if="user.is_superuser == 0 ">
+                        <td>
+                          <a href="#" @click="user_modify(index)">{{ '{{' }}user.username{{ '}}' }}</a>
+                        </td>
+                        <td class="">紀錄者</td>
+                      </tr>
+                    </template>
+                  </tbody>
+              </table>
+            </div>
+            <!-- /body table -->
+          </div>
+          <!-- /box -->
+        </div>
+      </div>
+
+      <!-- Modal -->
+      <div id="user_modal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" data-target="#user_modal">&times;</button>
+              <h4 class="modal-title">用戶管理</h4>
+            </div>
+            <!-- form -->
+            <form class="form-horizontal">
+              <div class="modal-body">
+                <!-- user.id -->
+                <input type="hidden" class="form-control" id="user-id" v-model="temp_user.id" disabled>
+                <!-- user.username -->
+                <div class="form-group">
+                  <label for="user-username" class="col-sm-2 control-label">帳號</label>
+                  <div class="col-sm-10" id="user_box">
+                    <input type="text" class="form-control" id="user-username" placeholder="帳號"
+                      oninput="isName(this.value,'user')" v-model="temp_user.username" required>
+                  </div>
+                </div>
+                <!-- user.password -->
+                <div class="form-group" v-if="temp_user.id == ''">
+                  <label for="user-password" class="col-sm-2 control-label">密碼</label>
+                  <div class="col-sm-10">
+                    <input type="password" class="form-control" id="user-password" placeholder="密碼"
+                      v-model="temp_user.password" required>
+                  </div>
+                </div>
+                <!-- user_access.fields -->
+                <div class="form-group">
+                  <label for="user-access" class="col-sm-2 control-label">可視場域</label>
+                  <div class="col-sm-10" id="user-access">
+                    <template v-for="(field,index) in fields" v-if="index>3">
+                      <div class="col-xs-12 col-sm-6">
+                        <label :for="'user-access-'+field.name" style="font-weight: normal;">
+                          <input type="checkbox" v-model="temp_user.access"
+                            :value="{'alias': field.alias, 'id': field.id, 'iframe': field.iframe, 'other_chk': field.other_chk, 'ipcam': field.ipcam, 'name': field.name, 'creator_id': field.creator_id}"
+                            :id="'user-access-'+field.name"> {{ '{{' }}field.name{{ '}}' }}
+                        </label>
+                      </div>
+                    </template>
+                    <template v-for="(field,index) in ipcam">
+                      <div class="col-xs-12 col-sm-6">
+                        <label :for="'user-access-'+field.name" style="font-weight: normal;">
+                          <input type="checkbox" v-model="temp_user.access"
+                            :value="{'alias': field.alias, 'id': field.id, 'iframe': field.iframe, 'other_chk': field.other_chk, 'ipcam': field.ipcam, 'name': field.name, 'creator_id': field.creator_id}"
+                            :id="'user-access-'+field.name"> {{ '{{' }}field.name{{ '}}' }}
+                        </label>
+                      </div>
+                    </template>
+                    <template v-for="(field,index) in other_sensor">
+                      <div class="col-xs-12 col-sm-6">
+                        <label :for="'user-access-'+field.name" style="font-weight: normal;">
+                          <input type="checkbox" v-model="temp_user.access"
+                            :value="{'alias': field.alias, 'id': field.id, 'iframe': field.iframe, 'other_chk': field.other_chk, 'ipcam': field.ipcam, 'name': field.name, 'creator_id': field.creator_id}"
+                            :id="'user-access-'+field.name"> {{ '{{' }}field.name{{ '}}' }}
+                        </label>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+                <!-- user_access.is_active -->
+                <div class="form-group">
+                  <label for="user-active" class="col-sm-2 control-label">即時資料<br>預設場域</label>
+                  <ul class="col-sm-10" id="user-active" :list="temp_user.access">
+                    <li :for="'user-active-'+field.name" style="list-style: none;" v-for="field in temp_user.access">
+                      <input type="radio" v-model="temp_user.active" :value="field.id" :id="'user-active-'+field.name">
+                      {{ '{{' }}field.name{{ '}}' }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- buttons -->
+              <div class="modal-footer">
+                <button type="button" class="btn btn-danger" @click="user_delete" v-if="temp_user.id != ''">刪除</button>
+                <button type="button" class="btn btn-primary" @click="user_update" v-if="temp_user.id != ''">修改</button>
+                <button type="button" class="btn btn-success" @click="user_create" v-if="temp_user.id == ''">確定</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal" data-target="#user_modal">關閉</button>
+              </div>
+            </form>
+            <!-- /form -->
+          </div>
+
+        </div>
+      </div>
+      <!-- /Modal -->
+    </div>
+    <!-- /USER -->
+
+    <!-- FIELD -->
+    <div class="tab-pane" id="field_management">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="box">
+            <!-- box-header -->
+            <div class="box-header with-border">
+              <h3 class="box-title">場域</h3>
+              <div class="box-tools">
+                <button class="btn btn-success" @click="field_new">新增</button>
+              </div>
+            </div>
+            <!-- /box-header -->
+
+            <!-- body table -->
+            <div class="box-body" style="overflow-x: auto;">
+              <template v-for="(field, index) in fields" v-if="(index>3)&!(field.ipcam)">
+                <div class="col-xs-12 col-md-6">
+                  <div class="panel panel-default">
+                    <div class="panel-heading" @click="field_body_show_change(field.field_id)">場域:
+                      {{ '{{' }}field.alias{{ '}}' }}({{ '{{' }}field.name{{ '}}' }})</div>
+                    <div class="panel-body" v-if="field_body_show == field.field_id">
+                      <div class="field_management_row">名稱: {{ '{{' }}field.alias{{ '}}' }}</div>
+                      <div class="field_management_row">農場編號: {{ '{{' }}field.farm_id{{ '}}' }}</div>
+                      <div class="field_management_row">場域編號: {{ '{{' }}field.field_id{{ '}}' }}</div>
+                      <div class="field_management_row">可耕種面積: {{ '{{' }}field.arable_area{{ '}}' }}
+                        {{ '{{' }}field.arable_area_unit_name{{ '}}' }}</div>
+                      <div class="field_management_row">農業設施: {{ '{{' }}field.field_facility{{ '}}' }}</div>
+                      <div class="field_management_row">土壤種類:
+                        {{ '{{' }}fields[1]['soil_type_list'][field.Soil_type-1][1]{{ '}}' }}</div>
+                      <div class="field_management_row">耕種方式:
+                        {{ '{{' }}fields[3]['field_method_list'][field.fiele_method-1][1]{{ '}}' }}</div>
+                      <div class="field_management_row">建立日期: {{ '{{' }}field.create_date{{ '}}' }}</div>
+                      <div class="field_management_row">最後修改日期: {{ '{{' }}field.update_date{{ '}}' }}</div>
+                      <button class="btn btn-success field_management_row" @click="field_modify(index)">修改</button>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+            <!-- /body table -->
+          </div>
+          <!-- /box -->
+        </div>
+      </div>
+      <!-- Modal -->
+      <div id="field_modal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" data-target="#field_modal">&times;</button>
+              <h4 class="modal-title">場域管理</h4>
+            </div>
+            <!-- form -->
+            <form class="form-horizontal">
+              <div class="modal-body">
+                <!-- user.id -->
+                <input type="hidden" class="form-control" id="field-id" v-model="temp_field.id" disabled>
+                <!-- field.name -->
+                <div class="form-group">
+                  <label for="field-name" class="col-sm-3 control-label required_s">代號</label>
+                  <div class="col-sm-9" id="field_box">
+                    <input type="text" class="form-control fieldgroup_required" id="field-name"
+                      placeholder="模組_tiaga_MAC 如m21_tiaga_004B4C440XXX" onblur="isName(this.value,'field')"
+                      v-model="temp_field.name" required>
+                  </div>
+                </div>
+                <!-- field.alias -->
+                <div class="form-group">
+                  <label for="field-alias" class="col-sm-3 control-label required_s">名稱</label>
+                  <div class="col-sm-9">
+                    <input type="text" class="form-control fieldgroup_required" id="field-alias"
+                      placeholder="顯示於即時資料儀表板頁籤的名稱" v-model="temp_field.alias" required>
+                  </div>
+                </div>
+                <!-- field.citytown -->
+                <div class="form-group">
+                  <label for="city_id" class="col-sm-3 control-label required_s">縣市</label>
+                  <div class="col-sm-9">
+                    <select id="city_id" class="form-control fieldgroup_required" v-model="temp_field.city_id">
+                      <option value="undefined" disabled selected hidden>請選擇場域所在縣市</option>
+                      <option v-for="(item, key, index) in citytown[0]" :value="key">{{ '{{' }}item[0].city_name{{ '}}'
+                        }}</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="town_id" class="col-sm-3 control-label required_s">鄉鎮區</label>
+                  <div class="col-sm-9">
+                    <select id="town_id" class="form-control fieldgroup_required" v-model="temp_field.town_id">
+                      <option value="undefined" disabled selected hidden>請選擇場域所在鄉鎮區</option>
+                      <option v-for="(item, key, index) in citytown[0][temp_field.city_id]" :value="item.town_id">
+                        {{ '{{' }}item.town_name{{ '}}' }}</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="cadastral" class="col-sm-3 control-label">地籍號碼</label>
+                  <div class="col-sm-9">
+                    <input type="text" class="form-control" id="cadastral" placeholder="段/小段/號 請查詢土地權狀"
+                      v-model="temp_field.cadastral">
+                  </div>
+                </div>
+                <!-- field.iframe -->
+                <div class="form-group">
+                  <label for="field-iframe" class="col-sm-3 control-label">iframe URL</label>
+                  <div class="col-sm-9">
+                    <input type="text" class="form-control" id="field-iframe" placeholder="外嵌連結"
+                      v-model="temp_field.iframe">
+                  </div>
+                </div>
+                <!-- field.area -->
+                <div class="form-group">
+                  <label for="area" class="col-sm-3 control-label required_s">可耕種面積</label>
+                  <div class="col-sm-9">
+                    <input type="number" class="form-control fieldgroup_required" id="area" min="0"
+                      placeholder="場域可耕種面積" v-model="temp_field.arable_area" required>
+                    <select class="form-control unit_selecter fieldgroup_required" v-model="temp_field.arable_area_unit"
+                      onchange="unit_selected(this);">
+                      <option value="undefined" disabled selected hidden>請選擇面積單位</option>
+                      <option v-for="unit in unit_list" v-if="unit.type_id == 1" :value="unit.unit_id">
+                        {{ '{{' }}unit.name{{ '}}' }}</option>
+                    </select>
+                  </div>
+                </div>
+                <!-- field.user -->
+                <div class="form-group">
+                  <label for="user" class="col-sm-3 control-label required_s">紀錄者</label>
+                  <div class="col-sm-9">
+                    <select name="user" id="user" class="form-control fieldgroup_required"
+                      v-model="temp_field.field_user" required>
+                      <option v-for="(user,index) in fields[0]['field_user']" :value="user">{{ '{{' }}user{{ '}}' }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+                <!-- field.facility -->
+                <div class="form-group">
+                  <label for="facility" class="col-sm-3 control-label">農業設施</label>
+                  <div class="col-sm-9">
+                    <input type="text" class="form-control" id="facility" placeholder="請填寫場域內的各項設施"
+                      v-model="temp_field.field_facility" required>
+                  </div>
+                </div>
+                <!-- field.type -->
+                <div class="form-group">
+                  <label for="Soil_type" class="col-sm-3 control-label required_s">土壤種類</label>
+                  <div class="col-sm-9">
+                    <select name="type" id="Soil_type" class="form-control fieldgroup_required"
+                      v-model="temp_field.Soil_type" required>
+                      <option v-for="(type,index) in fields[1]['soil_type_list']" :value="type[0]">
+                        {{ '{{' }}type[1]{{ '}}' }}</option>
+                    </select>
+                  </div>
+                </div>
+                <!-- field.method -->
+                <div class="form-group">
+                  <label for="method" class="col-sm-3 control-label required_s">耕種方式</label>
+                  <div class="col-sm-9">
+                    <select name="method" id="method" class="form-control fieldgroup_required"
+                      v-model="temp_field.fiele_method" required>
+                      <option v-for="(method,index) in fields[3]['field_method_list']" :value="method[0]">
+                        {{ '{{' }}method[1]{{ '}}' }}</option>
+                    </select>
+                  </div>
+                </div>
+                <!-- field.sensors -->
+                <div class="form-group">
+                  <label for="field-sensor" class="col-sm-3 control-label">傳感器</label>
+                  <div class="col-sm-9">
+                    <select class="form-control selectpicker" @change="field_sensor_add(sensor_selected)" v-model="sensor_selected" data-live-search="true">
+                      <option></option>
+                      <option v-for="(sensor, index) in sensors" :value="index" :key="index">{{ '{{' }}sensor.alias{{ '}}'}}({{ '{{' }}sensor.df_name{{ '}}' }})</option>
+                    </select>
+                  </div>
+                  <div class="col-sm-12" id="field-sensor" style="overflow-x: auto;">
+                    <field-sensor-table v-model="temp_field.sensors" :remove="field_sensor_remove"></field-sensor-table>
+                    <!-- TODO -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- buttons -->
+              <div class="modal-footer">
+                <button type="button" class="btn btn-danger" @click="field_delete"
+                  v-if="temp_field.id != ''">刪除</button>
+                <button type="button" class="btn btn-info fieldgroup_btn" @click="field_update"
+                  v-if="temp_field.id != ''">修改</button>
+                <button type="button" class="btn btn-success fieldgroup_btn" @click="field_create"
+                  v-if="temp_field.id == ''">確定</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"
+                  data-target="#field_modal">關閉</button>
+              </div>
+            </form>
+            <!-- /form -->
+          </div>
+
+        </div>
+      </div>
+      <!-- /Modal -->
+    </div>
+    <!-- /FIELD -->
+
+    <!-- OTHER SENSOR -->
+    <div class="tab-pane" id="other_sensor_management">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="box">
+            <!-- box-header -->
+            <div class="box-header with-border">
+              <h3 class="box-title">傳感器模組</h3>
+              <div class="box-tools">
+                <button class="btn btn-success" @click="other_sensor_new">新增</button>
+              </div>
+            </div>
+            <!-- /box-header -->
+
+            <!-- body table -->
+            <div class="box-body">
+              <table class="table table-bordered table-hover dataTable">
+                <thead>
+                  <tr>
+                    <th>代號 <i class='fa fa-sort'></i></th>
+                    <th>名稱 <i class='fa fa-sort'></i></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template v-for="(field, index) in other_sensor" v-if="(field.other_chk)">
+                    <tr>
+                      <td>
+                        <a href="#" @click="other_sensor_modify(index)">{{ '{{' }}field.name{{ '}}' }}</a>
+                      </td>
+                      <td>{{ '{{' }}field.alias{{ '}}' }}</td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+            <!-- /body table -->
+          </div>
+          <!-- /box -->
+        </div>
+      </div>
+
+      <!-- Modal -->
+      <div id="other_sensor_modal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal"
+                data-target="#other_sensor_modal">&times;</button>
+              <h4 class="modal-title">傳感器模組</h4>
+            </div>
+            <!-- form -->
+            <form class="form-horizontal">
+              <div class="modal-body">
+                <!-- user.id -->
+                <input type="hidden" class="form-control" id="other_sensor-id" v-model="temp_other_sensor.id" disabled>
+                <!-- other_sensor.name -->
+                <div class="form-group">
+                  <label for="other_sensor-name" class="col-sm-3 control-label required_s">代號</label>
+                  <div class="col-sm-9" id="other_sensor_box">
+                    <input type="text" class="form-control" id="other_sensor-name" placeholder="模組_tiaga_MAC 如m1_tiaga_004B4C440XXX"
+                      onblur="isName(this.value,'other_sensor')" v-model="temp_other_sensor.name" required>
+                  </div>
+                </div>
+                <!-- other_sensor.alias -->
+                <div class="form-group">
+                  <label for="other_sensor-alias" class="col-sm-3 control-label required_s">名稱</label>
+                  <div class="col-sm-9">
+                    <input type="text" class="form-control" id="other_sensor-alias" placeholder="顯示於儀表板頁籤的名稱"
+                      v-model="temp_other_sensor.alias" required>
+                  </div>
+                </div>
+                <!-- other_sensor.sensors -->
+                <div class="form-group">
+                  <label for="field-sensor" class="col-sm-3 control-label">傳感器</label>
+                  <div class="col-sm-9">
+                    <select class="form-control selectpicker" @change="other_sensor_sensor_add(other_sensor_selected)" v-model="other_sensor_selected" data-live-search="true">
+                      <option></option>
+                      <option v-for="(sensor, index) in sensors" :value="index" :key="index">{{ '{{' }}sensor.alias{{ '}}'}}({{ '{{' }}sensor.df_name{{ '}}' }})</option>
+                    </select>
+                  </div>
+                  <div class="col-sm-12" id="field-sensor" style="overflow-x: auto;">
+                    <field-sensor-table v-model="temp_other_sensor.sensors" :remove="other_sensor_sensor_remove">
+                    </field-sensor-table>
+                    <!-- TODO -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- buttons -->
+              <div class="modal-footer">
+                <button type="button" class="btn btn-danger" @click="other_sensor_delete"
+                  v-if="temp_other_sensor.id != ''">刪除</button>
+                <button type="button" class="btn btn-info" @click="other_sensor_update"
+                  v-if="temp_other_sensor.id != ''">修改</button>
+                <button type="button" class="btn btn-success" @click="other_sensor_create"
+                  v-if="temp_other_sensor.id == ''">確定</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"
+                  data-target="#other_sensor_modal">關閉</button>
+              </div>
+            </form>
+            <!-- /form -->
+          </div>
+
+        </div>
+      </div>
+      <!-- /Modal -->
+    </div>
+    <!-- /OTHER SENSOR -->
+
+    <!-- IPCAM -->
+    <div class="tab-pane" id="ipcam_management">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="box">
+            <!-- box-header -->
+            <div class="box-header with-border">
+              <h3 class="box-title">攝像機</h3>
+              <div class="box-tools">
+                <button class="btn btn-success" @click="ipcam_new">新增</button>
+              </div>
+            </div>
+            <!-- /box-header -->
+
+            <!-- body table -->
+            <div class="box-body">
+              <table class="table table-bordered table-hover dataTable">
+                <thead>
+                  <tr>
+                    <th>代號 <i class='fa fa-sort'></i></th>
+                    <th>名稱 <i class='fa fa-sort'></i></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template v-for="(field, index) in ipcam" v-if="(field.ipcam)">
+                    <tr>
+                      <td>
+                        <a href="#" @click="ipcam_modify(index)">{{ '{{' }}field.name{{ '}}' }}</a>
+                      </td>
+                      <td>{{ '{{' }}field.alias{{ '}}' }}</td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+            <!-- /body table -->
+          </div>
+          <!-- /box -->
+        </div>
+      </div>
+
+      <!-- Modal -->
+      <div id="ipcam_modal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" data-target="#ipcam_modal">&times;</button>
+              <h4 class="modal-title">攝像機管理</h4>
+            </div>
+            <!-- form -->
+            <form class="form-horizontal">
+              <div class="modal-body">
+                <!-- user.id -->
+                <input type="hidden" class="form-control" id="ipcam-id" v-model="temp_ipcam.id" disabled>
+                <!-- ipcam.name -->
+                <div class="form-group">
+                  <label for="ipcam-name" class="col-sm-3 control-label required_s">代號</label>
+                  <div class="col-sm-9" id="ipcam_box">
+                    <input type="text" class="form-control" id="ipcam-name" placeholder="攝像機的代號"
+                      onblur="isName(this.value,'ipcam')" v-model="temp_ipcam.name" required>
+                  </div>
+                </div>
+                <!-- ipcam.alias -->
+                <div class="form-group">
+                  <label for="ipcam-alias" class="col-sm-3 control-label required_s">名稱</label>
+                  <div class="col-sm-9">
+                    <input type="text" class="form-control" id="ipcam-alias" placeholder="顯示於儀表板頁籤的名稱"
+                      v-model="temp_ipcam.alias" required>
+                  </div>
+                </div>
+                <!-- ipcam.ipcam -->
+                <div class="form-group">
+                  <label for="ipcam-iframe" class="col-sm-3 control-label">攝像機網址</label>
+                  <div class="col-sm-9">
+                    <input type="text" class="form-control" id="ipcam-iframe" placeholder="攝像機連結"
+                      v-model="temp_ipcam.ipcam">
+                  </div>
+                </div>
+              </div>
+
+              <!-- buttons -->
+              <div class="modal-footer">
+                <button type="button" class="btn btn-danger" @click="ipcam_delete"
+                  v-if="temp_ipcam.id != ''">刪除</button>
+                <button type="button" class="btn btn-info" @click="ipcam_update" v-if="temp_ipcam.id != ''">修改</button>
+                <button type="button" class="btn btn-success" @click="ipcam_create"
+                  v-if="temp_ipcam.id == ''">確定</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"
+                  data-target="#ipcam_modal">關閉</button>
+              </div>
+            </form>
+            <!-- /form -->
+          </div>
+
+        </div>
+      </div>
+      <!-- /Modal -->
+    </div>
+    <!-- /IPCAM -->
+
+    <!-- controller -->
+    <div class="tab-pane" id="controller_management">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="box">
+            <!-- box-header -->
+            <div class="box-header with-border">
+              <h3 class="box-title">遠端控制管理</h3>
+              <div class="box-tools">
+                <button class="btn btn-success" @click="controller_new">新增</button>
+              </div>
+            </div>
+            <!-- /box-header -->
+
+            <!-- body table -->
+            <div class="box-body">
+              <table class="table table-bordered table-hover dataTable">
+                <thead>
+                  <tr>
+                    <th>代號 <i class='fa fa-sort'></i></th>
+                    <th>名稱 <i class='fa fa-sort'></i></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template v-for="(controller,index) in controllers">
+                    <tr>
+                      <td>
+                        <a href="#" @click="controller_modify(index)">{{ '{{' }}controller.controller_name{{ '}}' }}</a>
+                      </td>
+                      <td>{{ '{{' }}controller.controller_alias{{ '}}' }}</td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+            <!-- /body table -->
+          </div>
+          <!-- /box -->
+        </div>
+      </div>
+
+      <!-- Modal -->
+      <div id="controller_modal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" data-target="#controller_modal">&times;</button>
+              <h4 class="modal-title">遠端控制</h4>
+            </div>
+            <!-- form -->
+            <form class="form-horizontal">
+              <div class="modal-body">
+                <input type="hidden" class="form-control" id="controller-id" v-model="temp_controller.controller_id"
+                  disabled>
+                <div class="form-group">
+                  <label for="controller-name" class="col-sm-3 control-label required_s">代號</label>
+                  <div class="col-sm-9" id="controller_box">
+                    <input type="text" class="form-control" id="controller-name" placeholder="模組_tiaga_MAC 如m3_tiaga_004B4C440XXX"
+                      onblur="isName(this.value,'controller')" v-model="temp_controller.controller_name" required>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="controller-alias" class="col-sm-3 control-label required_s">名稱</label>
+                  <div class="col-sm-9">
+                    <input type="text" class="form-control" id="controller-alias" placeholder="遠端控制的名稱"
+                      v-model="temp_controller.controller_alias" required>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="controller-mac" class="col-sm-3 control-label required_s">HOST MAC</label>
+                  <div class="col-sm-9">
+                    <input type="text" class="form-control" id="controller-mac" placeholder="IoT主機的MAC號碼"
+                      v-model="temp_controller.host_mac" required>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="controller-user" class="col-sm-3 control-label required_s">可操作者</label>
+                  <div class="col-sm-9">
+                    <select id="controller-user" class="form-control" @change="add_controller_user()"
+                      v-model="temp_controller_user" required>
+                      <option v-for="user in users" :value="user.id">{{ '{{' }}user.username{{ '}}' }}</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-xs-12">
+                  <div class="col-xs-12 col-sm-6 col-md-4 controller_user text-center"
+                    v-for="(user,index) in temp_controller.users">
+                    <div class="controller_user_name">{{'{{'}}get_username_by_id(user){{'}}'}} <i class="fa fa-times"
+                        aria-hidden="true" @click="delete_controller_user(index)"></i></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- buttons -->
+              <div class="modal-footer">
+                <button type="button" class="btn btn-success" @click="relay_managament(temp_controller.host_mac)"
+                  v-if="temp_controller.controller_id != ''">設備管理</button>
+                <button type="button" class="btn btn-danger" @click="controller_delete"
+                  v-if="temp_controller.controller_id != ''">刪除</button>
+                <button type="button" class="btn btn-info" @click="controller_update"
+                  v-if="temp_controller.controller_id != ''">修改</button>
+                <button type="button" class="btn btn-success" @click="controller_create"
+                  v-if="temp_controller.controller_id == ''">確定</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"
+                  data-target="#ipcam_modal">關閉</button>
+              </div>
+            </form>
+            <!-- /form -->
+          </div>
+
+        </div>
+      </div>
+      <!-- /Modal -->
+
+      <!-- Modal -->
+      <div id="relay_modal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" data-target="#relay_modal">&times;</button>
+              <h4 class="modal-title">設備管理</h4>
+            </div>
+            <!-- form -->
+            <form class="form-horizontal">
+              <div class="modal-body">
+                <template v-for="(relay,index) in temp_relay">
+                  <div class="col-xs-12">
+                    <div class="panel panel-default">
+                      <div class="panel-heading" @click="relay_body_show_change(relay.RelayItemID)">
+                        {{ '{{' }}relay.RelayMemo{{ '}}' }}</div>
+                      <div class="panel-body" v-if="relay_body_show == relay.RelayItemID">
+                        <form class="form-horizontal">
+                          <input type="hidden" class="form-control" v-model="temp_relay[index].RelayItemID" disabled>
+                          <div class="form-group">
+                            <label for="RelayMemo" class="col-sm-3 control-label required_s">設備名稱</label>
+                            <div class="col-sm-9">
+                              <input type="text" class="form-control" id="RelayMemo" placeholder="設備名稱"
+                                v-model="temp_relay[index].RelayMemo" required>
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label for="RelayType" class="col-sm-3 control-label required_s">設備分類</label>
+                            <div class="col-sm-9">
+                              <select id="RelayType" class="form-control" v-model="temp_relay[index].RelayType">
+                                <option disabled>影響控制介面的圖標</option>
+                                <option v-for="icon in relay_icon_list" :value="icon.relay_type">
+                                  {{ '{{' }}icon.icon_name{{ '}}' }}</option>
+                              </select>
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+              <!-- buttons -->
+              <div class="modal-footer">
+                <button type="button" class="btn btn-success" @click="update_relay_icon">確定</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"
+                  data-target="#relay_modal">關閉</button>
+              </div>
+            </form>
+            <!-- /form -->
+          </div>
+
+        </div>
+      </div>
+      <!-- /Modal -->
+    </div>
+    <!-- /controller -->
+
+    <!-- GACP -->
+    <div class="tab-pane" id="gacp_management">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="box">
+            <!-- box-header -->
+            <div class="box-header with-border">
+              <h3 class="box-title">GACP管理</h3>
+              <div class="box-tools">
+                <button class="btn btn-success" @click="gacp_log_new">新增GACP</button>
+              </div>
+            </div>
+            <!-- /box-header -->
+
+            <!-- body table -->
+            <div class="box-body" style="overflow-x: auto;">
+              <template v-for="(gacp_log, index) in gacp_log" v-if="index>0">
+                <div class="col-xs-12 col-md-6">
+                  <div class="panel panel-default">
+                    <div class="panel-heading" @click="gacp_body_show_change(gacp_log.gacp_no)">場域:
+                      {{ '{{' }}get_field_name_by_gacp_log(gacp_log.region_id){{ '}}'
+                      }}({{ '{{' }}gacp_log.gacp_no{{ '}}' }})</div>
+                    <div class="panel-body" v-if="gacp_body_show == gacp_log.gacp_no">
+                      <div class="gacp_management_row">溯源連結: <a href="#" class="gacp_link"
+                          onclick="trace_link(this)">{{ '{{' }}gacp_log.gacp_no{{ '}}' }}</a></div>
+                      <div class="gacp_management_row">預計定植日期: {{ '{{' }}gacp_log.planning_planting_date{{ '}}' }}</div>
+                      <div class="gacp_management_row" v-if="gacp_log.status == 1">狀態: 開啟中</div>
+                      <div class="gacp_management_row" v-if="gacp_log.status == 2">狀態: 已關閉</div>
+                      <div class="gacp_management_row" v-if="gacp_log.is_organic == 1">
+                        <div>農法: 有機</div>
+                        <div><button id="switch_to_inorganic" class="btn btn-danger"
+                            v-on:click="switch_to_inorganic(gacp_log.gacp_no)">切換為非有機</button></div>
+                      </div>
+                      <div class="gacp_management_row" v-if="gacp_log.is_organic == 0">農法: 非有機</div>
+                      {% if session['is_taiwan'] %}
+                      <div class="gacp_management_row">
+                        <div>連結氣象局觀測站: {{ '{{' }}gacp_log.cwb_no{{ '}}' }}</div>
+                        <div><a href="https://e-service.cwb.gov.tw/wdps/obs/state.htm" target='_blank'
+                            rel='noopener noreferrer'>代號列表</a></div>
+                        <form method="post" action="/api/cwb_link" enctype="multipart/form-data">
+                          <div>
+                            <input type="hidden" name="gacp_no" v-model="gacp_log.gacp_no">
+                            <input type="text" class="form-control" name="cwb_no" placeholder="輸入觀測站代號" required>
+                          </div>
+                          <div>
+                            <button type="submit" class="btn btn-gacp-management btn-success">確定連結觀測站</button>
+                          </div>
+                        </form>
+                      </div>
+                      {% endif %}
+                      <div class="gacp_management_row">
+                        <div>連結攝像機: {{ '{{' }}gacp_log.ipcam_name{{ '}}' }}</div>
+                        <form method="post" action="/api/link_ipcam" enctype="multipart/form-data">
+                          <div>
+                            <input type="hidden" name="gacp_no" v-model="gacp_log.gacp_no">
+                            <input type="text" class="form-control" name="ipcam_name" placeholder="輸入攝像機名稱" required>
+                          </div>
+                          <div>
+                            <button type="submit" class="btn btn-gacp-management btn-success">確定連結攝像機</button>
+                          </div>
+                        </form>
+                      </div>
+                      <div class="gacp_management_row">
+                        <div>產品照片: </div>
+                        <a v-if="gacp_log.image_addr" :href="gacp_log.image_addr" target="_blank"
+                          rel="noopener noreferrer" class="report_image_container">
+                          <img class="gacp_log_image" :src="gacp_log.image_addr" style="width:80%; margin-bottom:10px"
+                            alt="圖片毀損">
+                        </a>
+                      </div>
+                      <div class="gacp_management_row">
+                        <form method="post" action="/api/upload_gacp_image" enctype="multipart/form-data">
+                          <div>
+                            <input type="hidden" name="gacp_no" v-model="gacp_log.gacp_no">
+                            <input type="file" capture="camera" class="form-control" name="up_file" accept=".jpg,.jpeg"
+                              required>
+                          </div>
+                          <div>
+                            <button type="submit" class="btn btn-gacp-management btn-success">上傳產品照片(限jpg)</button>
+                          </div>
+                        </form>
+                      </div>
+                      <div class="gacp_management_row">
+                        <div>產品/賣家連結: <a :href="gacp_log.purchase_link" target="_blank"
+                            rel="noopener noreferrer">{{"{{"}}gacp_log.purchase_link_name{{"}}"}}</a></div>
+                        <form method="post" action="/api/upload_purchase_link" enctype="multipart/form-data">
+                          <div>
+                            <input type="hidden" name="gacp_no" v-model="gacp_log.gacp_no">
+                            <input type="text" name="purchase_link_name" class="form-control" placeholder="連結顯示的文字"
+                              required>
+                            <input type="text" name="purchase_link" class="form-control" placeholder="連結網址" required>
+                          </div>
+                          <div>
+                            <button type="submit" class="btn btn-gacp-management btn-success">確定修改產品/賣家連結</button>
+                          </div>
+                        </form>
+                      </div>
+                      <div class="gacp_management_row">
+                        <div><button type="button" class="btn btn-gacp-management btn-primary"
+                            v-on:click="show_qrcode(gacp_log.gacp_no)">開啟溯源QRcode</button></div>
+                      </div>
+                      <div class="gacp_management_row">
+                        <div><button type="button" class="btn btn-gacp-management btn-danger"
+                            v-on:click="close_gacp(gacp_log.gacp_no)">關閉GACP流程</button></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+            <!-- /body table -->
+          </div>
+          <!-- /box -->
+        </div>
+      </div>
+
+      <!-- Modal -->
+      <div id="gacp_log_modal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" data-target="#gacp_log_modal">&times;</button>
+              <h4 class="modal-title">GACP管理 - 新增GACP</h4>
+            </div>
+            <div class="modal-body">
+              <h4>
+                本系統導循 WHO GACP 規範設計<br>
+                旨在協助農民紀錄農業生產過程中的相關農作資訊<br><br>
+
+                由於政府有制定相對應的農業規範<br>
+                對「產銷履歷」等相關文字與標章的使用有嚴格規定<br>
+                違反相關管理辦法時，政府會依法予以罰鍰處理<br>
+                請農場主與場域管理者等相關人士注意<br><br>
+
+                <p class="gacp_warning">現階段使用本系統並「未」代表您可以合法地宣稱您的農作或農產品符合「產銷履歷」或政府製定的農業規範</p>
+                如果因為您個人的不當宣稱導致政府依法予以罰鍰處理時<br>
+                本公司不負任何責任<br><br>
+
+                謹此告之 敬請見諒<br>
+              </h4>
+              <!-- form -->
+              <form class="form-horizontal">
+                <!-- gacp_log_field_id -->
+                <div class="form-group">
+                  <label for="gacp_log_field_id" class="col-sm-2 control-label">場域名稱</label>
+                  <div class="col-sm-10">
+                    <select id="gacp_log_field_id" class="form-control" v-model="temp_gacp_log.field_id"
+                      v-if="gacp_log[0]">
+                      <option v-for="info in gacp_log[0]['field_info']" :value="info[0]">{{ '{{' }}info[2]{{ '}}'
+                        }}({{ '{{' }}info[1]{{ '}}' }})</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="is_organic" class="col-sm-2 control-label">農法</label>
+                  <div class="col-sm-10">
+                    <select class="form-control" id="is_organic" v-model="temp_gacp_log.is_organic">
+                      <option value="1">有機</option>
+                      <option value="0">非有機</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="planning_planting_date" class="col-sm-2 control-label">預定定植日期</label>
+                  <div class="col-sm-10">
+                    <input type="date" placeholder="YYYY-MM-DD 如2020-01-01" class="form-control"
+                      id="planning_planting_date" name="planning_planting_date"
+                      v-model="temp_gacp_log.planning_planting_date" required>
+                  </div>
+                </div>
+            </div>
+
+            <!-- buttons -->
+            <div class="modal-footer">
+              <button type="button" class="btn btn-success" @click="gacp_log_create"
+                v-if="temp_gacp_log.create_date == 'new'">確定</button>
+              <button type="button" class="btn btn-default" data-dismiss="modal"
+                data-target="#gacp_log_modal">關閉</button>
+            </div>
+            </form>
+            <!-- /form -->
+          </div>
+
+        </div>
+      </div>
+      <!-- /Modal -->
+      <!-- qrcode Modal -->
+      <div class="modal fade" id="qrcode_container" tabindex="-1" role="dialog" aria-labelledby="qrcode_container_title"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h4 class="modal-title" id="qrcode_container_title">QRcode</h4>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div id="qrcode"></div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /qrcode Modal -->
+    </div>
+    <!-- /GACP -->
+
+  </div>
+</div>
+{% endblock %}
+{% block page_script %}
+<!-- CDNJS :: Sortable (https://cdnjs.com/) -->
+<script src="//cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js"></script>
+<script src="/static/js/qrcode.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.9/dist/js/bootstrap-select.min.js"></script>
+<script>
+  var app = null;
+
+  $(() => {
+    var fieldSensorTable = {
+      template: '#field-sensor-table-template',
+      props: {
+        value: Array,
+        remove: Function
+      },
+      name: 'field-sensor-table',
+      computed: {
+        sensors: {
+          get() {
+            return this.value
+          },
+          set(value) {
+            this.$emit('input', value)
+          }
+        }
+      },
+      methods: {
+        field_sensor_remove(index) {
+          this.remove(index);
+        }
+      }
+    };
+    // set Vue data
+    app = new Vue({
+      components: { fieldSensorTable: fieldSensorTable },
+      el: '#app',
+      data: () => {
+        return {
+          users: [{ "id": 0, "username": "", "is_superuser": 0, "access": [], "active": null, "status": 0 }],
+          sensors: [{ "id": 0, "name": "", "df_name": "", "alias": "", "unit": "", "icon": "", "bg_color": "" }],
+          fields: [],
+          gacp_log: [],
+          citytown: [],
+          other_sensor: [],
+          ipcam: [],
+          controllers: [],
+          temp_user: {
+            id: '',
+            username: '',
+            password: '',
+            is_superuser: false,
+            access: [],
+            active: null,
+          },
+          temp_sensor: {
+            id: '',
+            name: '',
+            df_name: '',
+            alias: '',
+            unit: '',
+            icon: '',
+            bg_color: '',
+          },
+          temp_field: {
+            id: '',
+            name: '',
+            alias: '',
+            iframe: '',
+            sensors: [],
+            farm_id: '',
+            arable_area: '',
+            arable_area_unit: '',
+            field_user: '',
+            field_facility: '',
+            Soil_type: '',
+            cadastral: '',
+            fiele_method: '',
+            create_date: '',
+            create_user: '',
+            update_date: '',
+            update_user: '',
+            city_id: '',
+            town_id: ''
+          },
+          temp_ipcam: {
+            id: '',
+            name: '',
+            alias: '',
+            ipcam: ''
+          },
+          temp_other_sensor: {
+            id: '',
+            name: '',
+            alias: '',
+            sensors: [],
+          },
+          temp_controller: {
+            id: '',
+            name: '',
+            alias: '',
+            mac: '',
+            users: []
+          },
+          temp_gacp_log: {
+            create_date: 'new',
+            field_id: '',
+            is_organic: '',
+            planning_planting_date: '',
+          },
+          unit_list: {
+            "0": {
+              unit_id: '0',
+              unit_name: '錯誤',
+              type_id: '0'
+            }
+          },
+          gacp_body_show: '',
+          field_body_show: '',
+          relay_body_show: '',
+          temp_controller_user: '',
+          temp_relay: [
+            {
+              "PinNo": 0,
+              "RelayItemID": 0,
+              "RelayMemo": "",
+              "RelayType": 0
+            }
+          ],
+          relay_icon_list: [
+            {
+              "icon_id": 0,
+              "icon_name": "",
+              "icon_path": "",
+              "relay_type": 0
+            }
+          ],
+          temp_mac: '',
+          sensor_selected:null,
+          other_sensor_selected:null
+        }
+      },
+      mounted() {
+        // init data
+        this.user_reload();
+        this.field_reload();
+        this.sensor_reload();
+        this.other_sensor_reload();
+        this.ipcam_reload();
+        this.controllers_reload();
+        this.gacp_log_reload();
+        this.get_unit_list();
+        this.get_citys_and_towns();
+      },
+      methods: {
+        // -- USER --
+        all_reload() {
+          this.user_reload();
+          this.field_reload();
+          this.sensor_reload();
+          this.other_sensor_reload();
+          this.ipcam_reload();
+          this.gacp_log_reload();
+          this.controllers_reload();
+        },
+        get_username_by_id(id) {
+          for (user in this.users) {
+            if (this.users[user].id == id) {
+              return this.users[user].username
+            }
+          }
+          return ""
+        },
+        user_reload() {
+          axios.get('/api/user')
+            .then(response => (this.users = response.data))
+            .catch((error) => { alert("取得帳號清單失敗"); })
+        },
+        user_new() {
+          this.temp_user = {
+            id: '',
+            username: '',
+            password: '',
+            is_superuser: false,
+            access: [],
+            active: null,
+          }
+          $('#user_modal').modal('toggle');
+        },
+        user_create() {
+          // TODO: validate data.
+          axios.post('/api/user', this.temp_user)
+            .then((data, status, request) => {
+              this.all_reload();
+              $('#user_modal').modal('toggle');
+            })
+            .catch((error) => { alert("創建失敗"); });
+        },
+        user_modify(index) {
+          // clone modify data, not alias
+          this.temp_user = JSON.parse(JSON.stringify(this.users[index]));
+          $('#user_modal').modal('toggle');
+          $("#field_alert_text").remove();
+          $("#ipcam_alert_text").remove();
+          $("#sensor_alert_text").remove();
+        },
+        user_update() {
+          // TODO: validate data.
+          axios.put('/api/user', this.temp_user)
+            .then((data, status, request) => {
+              this.all_reload();
+              $('#user_modal').modal('toggle');
+            })
+            .catch((error) => { alert("修改失敗"); });
+        },
+        user_delete() {
+          let r = confirm("將一併刪除所有帳號相關資料，確定要刪除?")
+          if (r) {
+            axios.delete('/api/user?id=' + this.temp_user.id)
+              .then((data, status, request) => {
+                this.all_reload();
+                $('#user_modal').modal('toggle');
+              })
+              .catch((error) => { alert("刪除失敗，請確認該用戶沒有管理中的場域"); });
+          }
+          location.reload();
+        },
+
+        // -- SENSOR --
+        sensor_reload() {
+          axios.get('/api/sensor')
+            .then(response => (this.sensors = response.data))
+            .catch((error) => { alert("取得傳感器失敗"); })
+        },
+        // -- FIELD --
+        field_reload() {
+          axios.get('/api/field')
+            .then(response => (this.fields = response.data))
+            .catch((error) => { alert("取得場域資料失敗"); })
+        },
+        field_new() {
+          this.temp_field = {
+            id: '',
+            name: '',
+            alias: '',
+            iframe: '',
+            sensors: [],
+            farm_id: '',
+            arable_area: '',
+            field_user: '',
+            field_facility: '',
+            Soil_type: '',
+            fiele_method: '',
+            cadastral: '',
+            create_date: '',
+            create_user: '',
+            update_date: '',
+            update_user: '',
+            city_id: '',
+            town_id: ''
+          }
+          $('#field_modal').modal('toggle');
+        },
+        field_create() {
+          // TODO: validate data.
+          if (!check_required("fieldgroup")) {
+            alert("請確認必要欄位皆已填寫")
+            return;
+          }
+          axios.post('/api/field', this.temp_field)
+            .then((data, status, request) => {
+              this.all_reload();
+              $('#field_modal').modal('toggle');
+            })
+            .catch((error) => {
+              console.log(error.response.data)
+              status = error.response.status
+              if (status == 400) {
+                alert("名稱與其他場域重複 請更改");
+              } else if (status == 404) {
+                alert("名稱有非法字元");
+              } else if (status == 406) {
+                if (error.response.data == 301) {
+                  alert("場域可耕種面積不可以大於農場可耕種總面積")
+                } else {
+                  alert("創建失敗");
+                }
+              } else {
+                alert("創建失敗");
+              }
+            });
+        },
+        field_modify(index) {
+          // clone modify data, not alias
+          this.temp_field = JSON.parse(JSON.stringify(this.fields[index]));
+          $('#field_modal').modal('toggle');
+          $("#field_alert_text").remove();
+          $("#ipcam_alert_text").remove();
+          $("#sensor_alert_text").remove();
+        },
+        field_update() {
+          // TODO: validate data.
+          if (!check_required("fieldgroup")) {
+            alert("請確認必要欄位皆已填寫")
+            return;
+          }
+          axios.put('/api/field', this.temp_field)
+            .then((data, status, request) => {
+              this.all_reload();
+              $('#field_modal').modal('toggle');
+            })
+            .catch((error) => {
+              status = error.response.status
+              if (status == 400) {
+                alert("名稱與其他場域重複 請更改");
+              } else if (status == 404) {
+                alert("名稱有非法字元");
+              } else if (status == 406) {
+                if (error.response.data == 301) {
+                  alert("場域可耕種面積不可以大於農場可耕種總面積")
+                } else {
+                  alert("更新失敗");
+                }
+              } else {
+                alert("更新失敗");
+              }
+            });
+        },
+        field_delete() {
+          if (confirm("將一併刪除資料庫內的資料，確定要刪除?")) {
+            axios.delete('/api/field?id=' + this.temp_field.id)
+              .then((data, status, request) => {
+                this.all_reload();
+                $('#field_modal').modal('toggle');
+              })
+              .catch((error) => { alert("刪除失敗，在GACP流程中的場域無法刪除"); });
+          }
+        },
+        field_sensor_add(index) {
+          new_sensor = JSON.parse(JSON.stringify(this.sensors[index]));
+          new_sensor['sensor'] = new_sensor.id;
+          this.temp_field.sensors.push(new_sensor);
+        },
+        field_sensor_remove(index) {
+          this.temp_field.sensors.splice(index, 1);
+        },
+        ipcam_reload() {
+          axios.get('/api/ipcam')
+            .then(response => (this.ipcam = response.data))
+            .catch((error) => { alert("取得攝像機資料失敗"); })
+        },
+        ipcam_new() {
+          this.temp_ipcam = {
+            id: '',
+            name: '',
+            alias: '',
+            ipcam: ''
+          }
+          $('#ipcam_modal').modal('toggle');
+        },
+        ipcam_create() {
+          // TODO: validate data.
+          axios.post('/api/ipcam', this.temp_ipcam)
+            .then((data, status, request) => {
+              this.all_reload();
+              $('#ipcam_modal').modal('toggle');
+            })
+            .catch((error) => { alert("創建失敗"); });
+        },
+        ipcam_modify(index) {
+          // clone modify data, not alias
+          this.temp_ipcam = JSON.parse(JSON.stringify(this.ipcam[index]));
+          $('#ipcam_modal').modal('toggle');
+          $("#field_alert_text").remove();
+          $("#ipcam_alert_text").remove();
+          $("#sensor_alert_text").remove();
+        },
+        ipcam_update() {
+          // TODO: validate data.
+          axios.put('/api/ipcam', this.temp_ipcam)
+            .then((data, status, request) => {
+              this.all_reload();
+              $('#ipcam_modal').modal('toggle');
+            })
+            .catch((error) => { alert("更新失敗"); });
+        },
+        ipcam_delete() {
+          if (confirm("將一併刪除資料庫內的資料，確定要刪除?")) {
+            axios.delete('/api/ipcam?id=' + this.temp_ipcam.id)
+              .then((data, status, request) => {
+                this.all_reload();
+                $('#ipcam_modal').modal('toggle');
+              })
+              .catch((error) => { alert("刪除失敗"); });
+          }
+        },
+        other_sensor_reload() {
+          axios.get('/api/other_sensor')
+            .then(response => (this.other_sensor = response.data))
+            .catch((error) => { alert("取得其他傳感器失敗"); })
+        },
+        other_sensor_new() {
+          this.temp_other_sensor = {
+            id: '',
+            name: '',
+            alias: '',
+            sensors: [],
+          }
+          $('#other_sensor_modal').modal('toggle');
+        },
+        other_sensor_create() {
+          // TODO: validate data.
+          axios.post('/api/other_sensor', this.temp_other_sensor)
+            .then((data, status, request) => {
+              this.all_reload();
+              $('#other_sensor_modal').modal('toggle');
+            })
+            .catch((error) => { alert("創建失敗"); });
+        },
+        other_sensor_modify(index) {
+          // clone modify data, not alias
+          this.temp_other_sensor = JSON.parse(JSON.stringify(this.other_sensor[index]));
+          $('#other_sensor_modal').modal('toggle');
+          $("#field_alert_text").remove();
+          $("#ipcam_alert_text").remove();
+          $("#sensor_alert_text").remove();
+        },
+        other_sensor_update() {
+          // TODO: validate data.
+          axios.put('/api/other_sensor', this.temp_other_sensor)
+            .then((data, status, request) => {
+              this.all_reload();
+              $('#other_sensor_modal').modal('toggle');
+            })
+            .catch((error) => { alert("更新失敗"); });
+        },
+        other_sensor_delete() {
+          if (confirm("將一併刪除資料庫內的資料，確定要刪除?")) {
+            axios.delete('/api/other_sensor?id=' + this.temp_other_sensor.id)
+              .then((data, status, request) => {
+                this.all_reload();
+                $('#other_sensor_modal').modal('toggle');
+              })
+              .catch((error) => { alert("刪除失敗"); });
+          }
+        },
+        other_sensor_sensor_add(index) {
+          new_sensor = JSON.parse(JSON.stringify(this.sensors[index]));
+          new_sensor['sensor'] = new_sensor.id;
+          this.temp_other_sensor.sensors.push(new_sensor);
+        },
+        other_sensor_sensor_remove(index) {
+          this.temp_other_sensor.sensors.splice(index, 1);
+        },
+        //-- GACP LOG --
+        gacp_log_reload() {
+          axios.get('/api/gacp_log')
+            .then(response => (this.gacp_log = response.data))
+            .catch((error) => { alert("取得GACP失敗"); })
+        },
+        gacp_log_new() {
+          this.temp_gacp_log = {
+            create_date: 'new',
+            field_id: '',
+            is_organic: '',
+            planning_planting_date: ''
+          }
+          $('#gacp_log_modal').modal('toggle');
+        },
+        gacp_log_create() {
+          var blank_flag = false;
+          for (var col in this.temp_gacp_log) {
+            if (this.temp_gacp_log[col] == '') {
+              blank_flag = true;
+            }
+          }
+          if (blank_flag) {
+            Swal.fire({
+              icon: 'warning',
+              title: "請確認資料都已填寫"
+            }).then((result) => {
+              blank_flag = false;
+              return;
+            })
+          } else {
+            Swal.fire({
+              title: "警告\n新增GACP的場域在此次種植流程內無法再次新增",
+              text: "新增GACP後才可以開始農務紀錄，新增GACP的場域在此次種植流程內無法再次新增GACP",
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#3085d6',
+              cancelButtonColor: '#d33',
+              confirmButtonText: "繼續",
+              cancelButtonText: "取消"
+            }).then((result) => {
+              if (result.value) {
+                Swal.fire({
+                  title: "警告\n此操作無法逆轉，確定要繼續？",
+                  text: "請確認各選項正確無誤",
+                  icon: 'warning',
+                  showCancelButton: true,
+                  position: 'top',
+                  confirmButtonColor: '#3085d6',
+                  cancelButtonColor: '#d33',
+                  confirmButtonText: "繼續",
+                  cancelButtonText: "取消"
+                }).then((result2) => {
+                  if (result2.value) {
+                    // TODO: validate data.
+                    axios.post('/api/gacp_log', this.temp_gacp_log)
+                      .then((data, status, request) => {
+                        this.all_reload();
+                        $('#gacp_log_modal').modal('toggle');
+                      }).catch((error) => { alert("創建失敗，對應GACP編號已存在"); });
+                  }
+                })
+              }
+            })
+          }
+          return false;
+        },
+        gacp_log_modify(index) {
+          // clone modify data
+          this.temp_gacp_log = JSON.parse(JSON.stringify(this.gacp_log[index]));
+          $('#gacp_log_modal').modal('toggle');
+          $("#field_alert_text").remove();
+          $("#ipcam_alert_text").remove();
+          $("#sensor_alert_text").remove();
+        },
+        get_unit_list() {
+          axios.get('/api/units')
+            .then(response => (this.unit_list = response.data))
+            .catch((error) => { alert("取得單位列表失敗") });
+        },
+        get_citys_and_towns() {
+          axios.get('/api/citytown')
+            .then(response => (this.citytown = response.data))
+            .catch((error) => { alert("取得城市/鄉鎮失敗") });
+        },
+        gacp_body_show_change(gacp_no) {
+          if (this.gacp_body_show == gacp_no) {
+            this.gacp_body_show = ''
+          } else {
+            this.gacp_body_show = gacp_no
+          }
+        },
+        field_body_show_change(field_id) {
+          if (this.field_body_show == field_id) {
+            this.field_body_show = ''
+          } else {
+            this.field_body_show = field_id
+          }
+        },
+        get_field_name_by_gacp_log(field_id) {
+          try {
+            for (let [index, field] of this.fields.entries()) {
+              if (index > 3 & field.id == field_id) {
+                let alias = field.alias
+                return `${alias}`
+              }
+            }
+            return "not find"
+          } catch{
+            return "error"
+          }
+        },
+        relay_body_show_change(RelayItemID) {
+          if (this.relay_body_show == RelayItemID) {
+            this.relay_body_show = ''
+          } else {
+            this.relay_body_show = RelayItemID
+          }
+        },
+        controllers_reload() {
+          axios.get('/api/controller')
+            .then(
+              response => (
+                this.controllers = response.data
+              )
+            )
+            .catch((error) => { alert("取得遠端控制失敗"); })
+        },
+        controller_new() {
+          this.temp_controller = {
+            controller_id: '',
+            controller_name: '',
+            controller_alias: '',
+            host_mac: '',
+            users: []
+          }
+          this.temp_controller_user = ''
+          $('#controller_modal').modal('toggle');
+        },
+        add_controller_user() {
+          if (this.temp_controller.users.indexOf(this.temp_controller_user) == -1) {
+            this.temp_controller.users.push(this.temp_controller_user)
+          }
+        },
+        delete_controller_user(index) {
+          this.temp_controller.users.splice(index, 1)
+          this.temp_controller_user = ''
+        },
+        controller_create() {
+          axios.post('/api/controller', this.temp_controller)
+            .then((data, status, request) => {
+              this.all_reload();
+              $('#controller_modal').modal('toggle');
+            })
+            .catch((error) => { alert("創建失敗 " + error.response.data); });
+        },
+        controller_update() {
+          this.temp_controller_user = ''
+          axios.put('/api/controller', this.temp_controller)
+            .then((data, status, request) => {
+              this.all_reload();
+              $('#controller_modal').modal('toggle');
+            })
+            .catch((error) => { alert("修改失敗" + error.response.data); });
+        },
+        controller_delete() {
+          this.temp_controller_user = ''
+          if (confirm("將一併刪除資料庫內的資料，確定要刪除?")) {
+            axios.delete('/api/controller?id=' + this.temp_controller.controller_id)
+              .then((data, status, request) => {
+                this.all_reload();
+                $('#controller_modal').modal('toggle');
+              })
+              .catch((error) => { alert("刪除失敗"); });
+          }
+        },
+        controller_modify(index) {
+          this.temp_controller = JSON.parse(JSON.stringify(this.controllers[index]));
+          this.temp_controller_user = ''
+          $('#controller_modal').modal('toggle');
+        },
+        relay_managament(mac) {
+          axios.get('/api/relay_management?mac=' + mac)
+            .then((data) => {
+              this.temp_relay = data.data
+              this.get_relay_icon_list()
+              this.temp_mac = mac
+              $('#relay_modal').modal('toggle');
+            })
+            .catch((error) => { alert("取得設備失敗 " + error.response.data) })
+        },
+        get_relay_icon_list() {
+          axios.get('/api/relay_icon_list')
+            .then((data) => {
+              this.relay_icon_list = data.data
+            })
+            .catch((error) => { alert("取得圖標失敗") })
+        },
+        update_relay_icon() {
+          axios.put('/api/relay_management', { 'mac': this.temp_mac, 'relay': this.temp_relay })
+            .then((data, status, request) => {
+              this.controllers_reload()
+              $('#relay_modal').modal('toggle');
+            })
+            .catch((error) => { alert("修改失敗") })
+        }
+      }
+    });
+
+  });
+  function onSearch(obj) {
+    setTimeout(function () {
+      var storeId = document.getElementById('store');
+      var rowsLength = storeId.rows.length;
+      var key = obj.value;
+
+      var searchCol = 0;
+
+      for (var i = 1; i < rowsLength; i++) {
+        var searchText = storeId.rows[i].cells[searchCol].textContent;
+        var searchText2 = storeId.rows[i].cells[1].textContent;
+        if (searchText.match(key) || searchText2.match(key)) {
+          storeId.rows[i].style.display = '';
+        } else {
+          storeId.rows[i].style.display = 'none';
+        }
+      }
+    }, 200);
+  }
+</script>
+<script type="text/javascript">
+  function isName(str, key_word) {
+    if (str.search(/^[a-zA-Z0-9_]{1,200}$/) != -1) {
+      $("#" + key_word + "_alert_text").remove();
+      return true;
+    }
+    else {
+      $("#" + key_word + "_alert_text").remove();
+      $("#" + key_word + "_box").append('<p id="' + key_word + '_alert_text" style="color:red;">' + "只能輸入英文、數字和_" + '</p>');
+    }
+  }
+  function isName2(str) {
+    if (str.search(/^[a-zA-Z0-9_]{1,200}$/) != -1) {
+      $("#ipcam_alert_text").remove();
+      return true;
+    }
+    else {
+      $("#ipcam_alert_text").remove();
+      $("#ipcam_box").append('<p id="ipcam_alert_text" style="color:red;">' + "只能輸入英文、數字和_" + '</p>');
+    }
+  }
+  function isName3(str) {
+    if (str.search(/^[a-zA-Z0-9_]{1,200}$/) != -1) {
+      $("#sensor_alert_text").remove();
+      return true;
+    }
+    else {
+      $("#sensor_alert_text").remove();
+      $("#other_sensor_box").append('<p id="sensor_alert_text" style="color:red;">' + "只能輸入英文、數字和_" + '</p>');
+    }
+  }
+</script>
+<script>
+  $(document).on('click', 'th', function () {
+    var table = $(this).parents('table').eq(0);
+    var rows = table.find('tr:gt(0)').toArray().sort(comparer($(this).index()));
+    this.asc = !this.asc;
+    if (!this.asc) { rows = rows.reverse(); }
+    table.children('tbody').empty().html(rows);
+  });
+  function comparer(index) {
+    return function (a, b) {
+      var valA = getCellValue(a, index), valB = getCellValue(b, index);
+      return $.isNumeric(valA) && $.isNumeric(valB) ?
+        valA - valB : valA.localeCompare(valB);
+    };
+  }
+  function getCellValue(row, index) {
+    return $(row).children('td').eq(index).text();
+  }
+
+  function show_qrcode(gacp_no) {
+    $("#qrcode").empty()
+    $('#qrcode_container').modal('show')
+    new QRCode(document.getElementById("qrcode"), "http://" + location.host + "/trace?no=" + gacp_no);
+  }
+  $(".required_s").prepend("<span style='color:red;'>*</span>");
+
+  function close_gacp(gacp_no) {
+    Swal.fire({
+      title: "警告\n請確定所有GACP表單填寫正確\n關閉後無法再次開啟",
+      text: "關閉GACP會使此GACP流程中所有表單鎖定，鎖定後的表單將無法繼續輸入，請確認所有GACP流程都已結束，並且所有表單填寫完畢。",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: "繼續",
+      cancelButtonText: "取消"
+    }).then((result) => {
+      if (result.value) {
+        Swal.fire({
+          title: "警告\n此操作無法逆轉，確定要繼續？",
+          text: "建議重新確認所有表單的輸入狀況",
+          icon: 'warning',
+          showCancelButton: true,
+          position: 'top',
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: "繼續",
+          cancelButtonText: "取消"
+        }).then((result2) => {
+          if (result2.value) {
+            $.ajax(
+              {
+                type: "POST",
+                url: '/api/close_gacp',
+                data: { 'gacp_no': gacp_no },
+                success: function () {
+                  Swal.fire({
+                    icon: 'success',
+                    title: "此GACP已關閉",
+                  }).then((result3) => {
+                    location.reload();
+                  })
+                },
+                error: function () {
+                  Swal.fire({
+                    icon: 'error',
+                    title: "發生錯誤，請重試",
+                  })
+                }
+              }
+            )
+
+          }
+        })
+      }
+    })
+    return false;
+  }
+
+  $(".gacp_link").attr("href", "http://" + location.host + "/trace?no=" + this.text)
+
+  function switch_to_inorganic(gacp_no) {
+    Swal.fire({
+      title: "警告\n切換後無法恢復有機農法",
+      text: "非有機農法狀態下可使用非有機認證資材，但切換後無法恢復，請謹慎選擇",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: "繼續",
+      cancelButtonText: "取消"
+    }).then((result) => {
+      if (result.value) {
+        Swal.fire({
+          title: "警告\n此操作無法逆轉，確定要繼續？",
+          text: "切換後無法恢復，請謹慎選擇",
+          icon: 'warning',
+          showCancelButton: true,
+          position: 'top',
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: "繼續",
+          cancelButtonText: "取消"
+        }).then((result2) => {
+          if (result2.value) {
+            $.ajax(
+              {
+                type: "POST",
+                url: '/api/switch_to_inorganic',
+                data: { 'gacp_no': gacp_no },
+                success: function () {
+                  Swal.fire({
+                    icon: 'success',
+                    title: "農法已切換為 非有機",
+                  }).then((result3) => {
+                    location.reload();
+                  })
+                },
+                error: function () {
+                  Swal.fire({
+                    icon: 'error',
+                    title: "發生錯誤，請重試",
+                  })
+                }
+              }
+            )
+
+          }
+        })
+      }
+    })
+    return false;
+  }
+
+  function trace_link(obj) {
+    window.open("http://" + location.host + "/trace?no=" + obj.text, "TIAGA產銷溯源系統")
+  }
+
+  function unit_selected(obj) {
+    $(obj).css("color", "black");
+  }
+
+  function check_required(group_name) {
+    var check_flag = false;
+    $("." + group_name + "_required").each(
+      function () {
+        if (!$(this).val()) {
+          check_flag = true;
+        }
+      }
+    )
+    if (!check_flag) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  $("#relay_modal").on("hidden.bs.modal", function () {
+    $('body').addClass('modal-open');
+  });
+  $(window).on("show.bs.modal",function(){
+    $('.selectpicker').selectpicker();
+  })
+
+</script>
+{% endblock %}
